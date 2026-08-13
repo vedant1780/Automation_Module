@@ -1,0 +1,131 @@
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  font-family: Arial, sans-serif;
+  background: #f5f6fa;
+}
+
+.app {
+  min-height: 100vh;
+}
+
+.header {
+  height: 65px;
+  background: #1f2937;
+  color: white;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 35px;
+}
+
+.header h1 {
+  margin: 0;
+  font-size: 24px;
+}
+
+.header span {
+  font-size: 14px;
+  color: #d1d5db;
+}
+
+.container {
+  padding: 35px;
+}
+
+.page-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 25px;
+}
+
+.page-header h2 {
+  margin: 0 0 5px;
+}
+
+.page-header p {
+  margin: 0;
+  color: #6b7280;
+}
+
+.add-button {
+  background: #2563eb;
+  color: white;
+  border: none;
+  padding: 11px 18px;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 14px;
+}
+
+.add-button:hover {
+  background: #1d4ed8;
+}
+
+.table-container {
+  background: white;
+  border-radius: 8px;
+  overflow-x: auto;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+}
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+th {
+  background: #f3f4f6;
+  text-align: left;
+  padding: 14px;
+  font-size: 13px;
+  color: #374151;
+}
+
+td {
+  padding: 14px;
+  border-top: 1px solid #e5e7eb;
+  font-size: 14px;
+}
+
+tr:hover {
+  background: #f9fafb;
+}
+
+.edit-button,
+.delete-button {
+  border: none;
+  padding: 7px 11px;
+  border-radius: 5px;
+  cursor: pointer;
+  margin-right: 6px;
+}
+
+.edit-button {
+  background: #e5e7eb;
+  color: #111827;
+}
+
+.delete-button {
+  background: #fee2e2;
+  color: #dc2626;
+}
+
+.message,
+.error,
+.empty {
+  padding: 25px;
+  text-align: center;
+}
+
+.error {
+  background: #fee2e2;
+  color: #b91c1c;
+  border-radius: 6px;
+}
+
