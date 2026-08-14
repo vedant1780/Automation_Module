@@ -34,10 +34,6 @@ public class EmployeeSalaryController {
     }
 
 
-    // =====================================================
-    // GET ALL EMPLOYEE SALARY ASSIGNMENTS
-    // =====================================================
-
     @GetMapping
     public ResponseEntity<List<EmployeeSalary>>
     getAllEmployeeSalaries() {
@@ -48,10 +44,6 @@ public class EmployeeSalaryController {
         return ResponseEntity.ok(salaries);
     }
 
-
-    // =====================================================
-    // GET SALARY ASSIGNMENT BY ASSIGNMENT ID
-    // =====================================================
 
     @GetMapping("/{id}")
     public ResponseEntity<EmployeeSalary>
@@ -71,16 +63,11 @@ public class EmployeeSalaryController {
     }
 
 
-    // =====================================================
-    // GET ALL SALARY ASSIGNMENTS FOR EMPLOYEE
-    // =====================================================
-
     @GetMapping("/employee/{employeeId}")
     public ResponseEntity<List<EmployeeSalary>>
     getSalaryHistory(
             @PathVariable Long employeeId) {
 
-        // Check employee exists
         employeeRepository
                 .findById(employeeId)
                 .orElseThrow(() ->
@@ -99,16 +86,11 @@ public class EmployeeSalaryController {
     }
 
 
-    // =====================================================
-    // GET LATEST SALARY FOR EMPLOYEE
-    // =====================================================
-
     @GetMapping("/employee/{employeeId}/latest")
     public ResponseEntity<EmployeeSalary>
     getLatestSalary(
             @PathVariable Long employeeId) {
 
-        // Check employee exists
         employeeRepository
                 .findById(employeeId)
                 .orElseThrow(() ->
@@ -132,20 +114,12 @@ public class EmployeeSalaryController {
     }
 
 
-    // =====================================================
-    // ASSIGN SALARY TO EMPLOYEE
-    // =====================================================
-
     @PostMapping("/{employeeId}/{salaryStructureId}")
     public ResponseEntity<EmployeeSalary>
     assignSalary(
             @PathVariable Long employeeId,
             @PathVariable Long salaryStructureId,
             @RequestParam LocalDate effectiveFrom) {
-
-        // -------------------------------------------------
-        // Find employee
-        // -------------------------------------------------
 
         Employee employee =
                 employeeRepository
@@ -157,10 +131,6 @@ public class EmployeeSalaryController {
                                 ));
 
 
-        // -------------------------------------------------
-        // Find salary structure
-        // -------------------------------------------------
-
         SalaryStructure salaryStructure =
                 salaryStructureRepository
                         .findById(salaryStructureId)
@@ -171,10 +141,6 @@ public class EmployeeSalaryController {
                                 ));
 
 
-        // -------------------------------------------------
-        // Validate date
-        // -------------------------------------------------
-
         if (effectiveFrom == null) {
 
             throw new RuntimeException(
@@ -182,10 +148,6 @@ public class EmployeeSalaryController {
             );
         }
 
-
-        // -------------------------------------------------
-        // Create assignment
-        // -------------------------------------------------
 
         EmployeeSalary employeeSalary =
                 new EmployeeSalary();
@@ -200,13 +162,8 @@ public class EmployeeSalaryController {
                 effectiveFrom
         );
 
-        // Initially no end date
         employeeSalary.setEffectiveTo(null);
 
-
-        // -------------------------------------------------
-        // Save
-        // -------------------------------------------------
 
         EmployeeSalary savedSalary =
                 employeeSalaryRepository.save(
@@ -218,10 +175,6 @@ public class EmployeeSalaryController {
                 .body(savedSalary);
     }
 
-
-    // =====================================================
-    // UPDATE SALARY ASSIGNMENT
-    // =====================================================
 
     @PutMapping("/{id}")
     public ResponseEntity<EmployeeSalary>
@@ -236,10 +189,6 @@ public class EmployeeSalaryController {
             @RequestParam(required = false)
             LocalDate effectiveTo) {
 
-        // -------------------------------------------------
-        // Find assignment
-        // -------------------------------------------------
-
         EmployeeSalary employeeSalary =
                 employeeSalaryRepository
                         .findById(id)
@@ -249,10 +198,6 @@ public class EmployeeSalaryController {
                                                 + id
                                 ));
 
-
-        // -------------------------------------------------
-        // Update employee
-        // -------------------------------------------------
 
         if (employeeId != null) {
 
@@ -268,10 +213,6 @@ public class EmployeeSalaryController {
             employeeSalary.setEmployee(employee);
         }
 
-
-        // -------------------------------------------------
-        // Update salary structure
-        // -------------------------------------------------
 
         if (salaryStructureId != null) {
 
@@ -290,10 +231,6 @@ public class EmployeeSalaryController {
         }
 
 
-        // -------------------------------------------------
-        // Update effective from
-        // -------------------------------------------------
-
         if (effectiveFrom != null) {
 
             employeeSalary.setEffectiveFrom(
@@ -302,10 +239,6 @@ public class EmployeeSalaryController {
         }
 
 
-        // -------------------------------------------------
-        // Update effective to
-        // -------------------------------------------------
-
         if (effectiveTo != null) {
 
             employeeSalary.setEffectiveTo(
@@ -313,10 +246,6 @@ public class EmployeeSalaryController {
             );
         }
 
-
-        // -------------------------------------------------
-        // Validate dates
-        // -------------------------------------------------
 
         if (employeeSalary.getEffectiveFrom() != null
                 && employeeSalary.getEffectiveTo() != null
@@ -331,10 +260,6 @@ public class EmployeeSalaryController {
         }
 
 
-        // -------------------------------------------------
-        // Save
-        // -------------------------------------------------
-
         EmployeeSalary updatedSalary =
                 employeeSalaryRepository.save(
                         employeeSalary
@@ -343,10 +268,6 @@ public class EmployeeSalaryController {
         return ResponseEntity.ok(updatedSalary);
     }
 
-
-    // =====================================================
-    // CLOSE SALARY ASSIGNMENT
-    // =====================================================
 
     @PutMapping("/{id}/close")
     public ResponseEntity<EmployeeSalary>
@@ -388,10 +309,6 @@ public class EmployeeSalaryController {
         return ResponseEntity.ok(updatedSalary);
     }
 
-
-    // =====================================================
-    // DELETE SALARY ASSIGNMENT
-    // =====================================================
 
     @DeleteMapping("/{id}")
     public ResponseEntity<String>

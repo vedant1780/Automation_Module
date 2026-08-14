@@ -48,25 +48,13 @@ public class EmployeeController {
         this.payslipEmailRepository = payslipEmailRepository;
     }
 
-    // ==========================================================
-    // CREATE EMPLOYEE
-    // ==========================================================
-
     @PostMapping
     @Transactional
     public Employee createEmployee(
             @RequestBody Employee employee) {
 
-        // ------------------------------------------
-        // Save employee first
-        // ------------------------------------------
-
         Employee savedEmployee =
                 employeeRepository.save(employee);
-
-        // ------------------------------------------
-        // Create leave balance automatically
-        // ------------------------------------------
 
         int currentYear =
                 Year.now().getValue();
@@ -76,7 +64,6 @@ public class EmployeeController {
 
         leaveBalance.setEmployee(savedEmployee);
 
-        // Default annual leave
         leaveBalance.setCasualLeave(12);
         leaveBalance.setSickLeave(10);
         leaveBalance.setEarnedLeave(15);
@@ -89,20 +76,12 @@ public class EmployeeController {
     }
 
 
-    // ==========================================================
-    // GET ALL EMPLOYEES
-    // ==========================================================
-
     @GetMapping
     public List<Employee> getEmployees() {
 
         return employeeRepository.findAll();
     }
 
-
-    // ==========================================================
-    // GET EMPLOYEE BY ID
-    // ==========================================================
 
     @GetMapping("/{id}")
     public Employee getEmployee(
@@ -116,10 +95,6 @@ public class EmployeeController {
                         ));
     }
 
-
-    // ==========================================================
-    // UPDATE EMPLOYEE
-    // ==========================================================
 
     @PutMapping("/{id}")
     @Transactional
@@ -154,26 +129,16 @@ public class EmployeeController {
                 employee.getDesignation()
         );
 
-        // Password and role intentionally unchanged
-
         return employeeRepository.save(
                 existingEmployee
         );
     }
 
 
-    // ==========================================================
-    // DELETE EMPLOYEE
-    // ==========================================================
-
     @DeleteMapping("/{id}")
     @Transactional
     public String deleteEmployee(
             @PathVariable Long id) {
-
-        // ------------------------------------------
-        // Check employee
-        // ------------------------------------------
 
         Employee employee =
                 employeeRepository.findById(id)
@@ -183,53 +148,25 @@ public class EmployeeController {
                                 ));
 
 
-        // ======================================================
-        // DELETE CHILD RECORDS FIRST
-        // ======================================================
-
-        // ------------------------------------------------------
-        // 1. Delete payslip email records
-        // ------------------------------------------------------
-
         payslipEmailRepository
                 .deleteByEmployeeId(id);
 
-
-        // ------------------------------------------------------
-        // 2. Delete payroll records
-        // ------------------------------------------------------
 
         payrollRepository
                 .deleteByEmployeeId(id);
 
 
-        // ------------------------------------------------------
-        // 3. Delete employee salary assignments
-        // ------------------------------------------------------
-
         employeeSalaryRepository
                 .deleteByEmployeeId(id);
 
-
-        // ------------------------------------------------------
-        // 4. Delete leave applications
-        // ------------------------------------------------------
 
         leaveApplicationRepository
                 .deleteByEmployeeId(id);
 
 
-        // ------------------------------------------------------
-        // 5. Delete attendance records
-        // ------------------------------------------------------
-
         attendanceRepository
                 .deleteByEmployeeId(id);
 
-
-        // ------------------------------------------------------
-        // 6. Delete leave balance
-        // ------------------------------------------------------
 
         leaveBalanceRepository
                 .findByEmployeeId(id)
@@ -237,10 +174,6 @@ public class EmployeeController {
                         leaveBalanceRepository::delete
                 );
 
-
-        // ======================================================
-        // DELETE EMPLOYEE LAST
-        // ======================================================
 
         employeeRepository.delete(employee);
 

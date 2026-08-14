@@ -31,9 +31,6 @@ public class SalaryController {
     }
 
 
-    // =========================================================
-    // CREATE SALARY STRUCTURE
-    // =========================================================
 
     @PostMapping
     public SalaryStructure create(
@@ -45,9 +42,6 @@ public class SalaryController {
     }
 
 
-    // =========================================================
-    // GET ALL SALARY STRUCTURES
-    // =========================================================
 
     @GetMapping
     public List<SalaryStructure> getAll() {
@@ -55,10 +49,6 @@ public class SalaryController {
         return salaryStructureRepository.findAll();
     }
 
-
-    // =========================================================
-    // GET SALARY STRUCTURE BY ID
-    // =========================================================
 
     @GetMapping("/{id}")
     public SalaryStructure getById(
@@ -71,11 +61,6 @@ public class SalaryController {
                                 "Salary structure not found"
                         ));
     }
-
-
-    // =========================================================
-    // UPDATE SALARY STRUCTURE
-    // =========================================================
 
     @PutMapping("/{id}")
     public SalaryStructure update(
@@ -120,18 +105,12 @@ public class SalaryController {
     }
 
 
-    // =========================================================
-    // DELETE SALARY STRUCTURE
-    // =========================================================
-
     @DeleteMapping("/{id}")
     @Transactional
     public ResponseEntity<?> deleteSalaryStructure(
             @PathVariable Long id) {
 
-        // -----------------------------------------------------
-        // Find salary structure
-        // -----------------------------------------------------
+
 
         SalaryStructure salaryStructure =
                 salaryStructureRepository
@@ -142,18 +121,11 @@ public class SalaryController {
                                 ));
 
 
-        // -----------------------------------------------------
-        // Check whether it is assigned to employees
-        // -----------------------------------------------------
-
         List<EmployeeSalary> assignments =
                 employeeSalaryRepository
                         .findBySalaryStructureId(id);
 
 
-        // -----------------------------------------------------
-        // Do not delete if it is being used
-        // -----------------------------------------------------
 
         if (!assignments.isEmpty()) {
 
@@ -168,10 +140,7 @@ public class SalaryController {
         }
 
 
-        // -----------------------------------------------------
-        // Safe to delete
-        // -----------------------------------------------------
-
+   
         salaryStructureRepository.delete(
                 salaryStructure
         );

@@ -34,18 +34,10 @@ function LeaveApplication() {
   const [message, setMessage] = useState("");
   const [messageType, setMessageType] = useState("info");
 
-  // =========================================================
-  // MESSAGE
-  // =========================================================
-
   const showMessage = (text, type = "info") => {
     setMessage(text);
     setMessageType(type);
   };
-
-  // =========================================================
-  // GET LOGGED-IN USER ROLE
-  // =========================================================
 
   const getUserRole = () => {
     try {
@@ -70,10 +62,6 @@ function LeaveApplication() {
       return "";
     }
   };
-
-  // =========================================================
-  // GET LOGGED-IN EMPLOYEE
-  // =========================================================
 
   const getLoggedInEmployee = () => {
     try {
@@ -103,10 +91,6 @@ function LeaveApplication() {
     }
   };
 
-  // =========================================================
-  // GET EMPLOYEES
-  // =========================================================
-
   const getEmployees = async () => {
     try {
       setEmployeeLoading(true);
@@ -119,11 +103,6 @@ function LeaveApplication() {
 
       const role = getUserRole();
       const loggedInEmployee = getLoggedInEmployee();
-
-      // =====================================================
-      // EMPLOYEE LOGIN
-      // Automatically select logged-in employee
-      // =====================================================
 
       if (role === "EMPLOYEE") {
         if (!loggedInEmployee?.id) {
@@ -156,11 +135,6 @@ function LeaveApplication() {
         return;
       }
 
-      // =====================================================
-      // ADMIN / HR
-      // Allow employee selection
-      // =====================================================
-
       if (role === "ADMIN" || role === "HR") {
         console.log("Admin/HR: employee selection enabled");
 
@@ -169,10 +143,6 @@ function LeaveApplication() {
 
         return;
       }
-
-      // =====================================================
-      // UNKNOWN ROLE
-      // =====================================================
 
       showMessage(
         "Unable to determine user role. Please login again.",
@@ -191,10 +161,6 @@ function LeaveApplication() {
       setEmployeeLoading(false);
     }
   };
-
-  // =========================================================
-  // GET LEAVE BALANCE
-  // =========================================================
 
   const getLeaveBalance = async (id = employeeId) => {
     if (!id) {
@@ -226,10 +192,6 @@ function LeaveApplication() {
     }
   };
 
-  // =========================================================
-  // GET EMPLOYEE LEAVES
-  // =========================================================
-
   const getEmployeeLeaves = async (id = employeeId) => {
     if (!id) {
       setLeaves([]);
@@ -260,10 +222,6 @@ function LeaveApplication() {
     }
   };
 
-  // =========================================================
-  // EMPLOYEE SELECTION
-  // =========================================================
-
   const handleEmployeeChange = (e) => {
     const id = e.target.value;
 
@@ -273,10 +231,6 @@ function LeaveApplication() {
     setLeaveBalance(null);
     setLeaves([]);
   };
-
-  // =========================================================
-  // CALCULATE DAYS
-  // =========================================================
 
   const calculateDays = () => {
     if (!startDate || !endDate) {
@@ -313,10 +267,6 @@ function LeaveApplication() {
     return difference > 0 ? difference : 0;
   };
 
-  // =========================================================
-  // SELECTED EMPLOYEE
-  // =========================================================
-
   const getSelectedEmployee = () => {
     if (!employeeId) {
       return null;
@@ -329,10 +279,6 @@ function LeaveApplication() {
       ) || null
     );
   };
-
-  // =========================================================
-  // SELECTED LEAVE BALANCE
-  // =========================================================
 
   const getSelectedLeaveBalance = () => {
     if (!leaveBalance) {
@@ -359,10 +305,6 @@ function LeaveApplication() {
         return 0;
     }
   };
-
-  // =========================================================
-  // APPLY LEAVE
-  // =========================================================
 
   const applyLeave = async (e) => {
     e.preventDefault();
@@ -471,17 +413,9 @@ function LeaveApplication() {
     }
   };
 
-  // =========================================================
-  // INITIAL LOAD
-  // =========================================================
-
   useEffect(() => {
     getEmployees();
   }, []);
-
-  // =========================================================
-  // LOAD BALANCE + HISTORY WHEN EMPLOYEE CHANGES
-  // =========================================================
 
   useEffect(() => {
     if (!employeeId) {
@@ -493,10 +427,6 @@ function LeaveApplication() {
     getEmployeeLeaves(employeeId);
     getLeaveBalance(employeeId);
   }, [employeeId]);
-
-  // =========================================================
-  // DATA
-  // =========================================================
 
   const selectedEmployee = getSelectedEmployee();
 
@@ -547,26 +477,14 @@ function LeaveApplication() {
       ? "Sick Leave"
       : "Earned Leave";
 
-  // =========================================================
-  // ROLE CHECKS
-  // =========================================================
-
   const isEmployee = userRole === "EMPLOYEE";
 
   const isAdminOrHR =
     userRole === "ADMIN" ||
     userRole === "HR";
 
-  // =========================================================
-  // UI
-  // =========================================================
-
   return (
     <div className="leave-page">
-
-      {/* =====================================================
-          APPLICATION FORM
-      ===================================================== */}
 
       <div className="card">
 
@@ -591,10 +509,6 @@ function LeaveApplication() {
         )}
 
         <form onSubmit={applyLeave}>
-
-          {/* =================================================
-              EMPLOYEE
-          ================================================= */}
 
           <div className="field">
 
@@ -636,10 +550,6 @@ function LeaveApplication() {
             </select>
 
           </div>
-
-          {/* =================================================
-              EMPLOYEE INFO
-          ================================================= */}
 
           {selectedEmployee && (
 
@@ -696,10 +606,6 @@ function LeaveApplication() {
             </div>
 
           )}
-
-          {/* =================================================
-              LEAVE BALANCE
-          ================================================= */}
 
           {employeeId && (
 
@@ -788,10 +694,6 @@ function LeaveApplication() {
 
           )}
 
-          {/* =================================================
-              LEAVE TYPE / DAYS
-          ================================================= */}
-
           <div className="row">
 
             <div className="field">
@@ -839,10 +741,6 @@ function LeaveApplication() {
 
           </div>
 
-          {/* =================================================
-              SELECTED BALANCE
-          ================================================= */}
-
           {employeeId && leaveBalance && (
 
             <div className="selected-balance">
@@ -858,10 +756,6 @@ function LeaveApplication() {
             </div>
 
           )}
-
-          {/* =================================================
-              DATES
-          ================================================= */}
 
           <div className="row">
 
@@ -917,10 +811,6 @@ function LeaveApplication() {
 
           </div>
 
-          {/* =================================================
-              REASON
-          ================================================= */}
-
           <div className="field">
 
             <label>
@@ -940,10 +830,6 @@ function LeaveApplication() {
 
           </div>
 
-          {/* =================================================
-              SUBMIT
-          ================================================= */}
-
           <button
             type="submit"
             className="submit-button"
@@ -961,10 +847,6 @@ function LeaveApplication() {
         </form>
 
       </div>
-
-      {/* =====================================================
-          LEAVE HISTORY
-      ===================================================== */}
 
       <div className="card">
 

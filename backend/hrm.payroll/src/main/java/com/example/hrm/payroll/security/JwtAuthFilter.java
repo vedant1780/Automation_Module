@@ -22,19 +22,11 @@ public class JwtAuthFilter extends OncePerRequestFilter {
     private final JwtService jwtService;
 
 
-    // =====================================================
-    // CONSTRUCTOR
-    // =====================================================
 
     public JwtAuthFilter(JwtService jwtService) {
 
         this.jwtService = jwtService;
     }
-
-
-    // =====================================================
-    // FILTER
-    // =====================================================
 
     @Override
     protected void doFilterInternal(
@@ -44,18 +36,11 @@ public class JwtAuthFilter extends OncePerRequestFilter {
             throws ServletException, IOException {
 
 
-        // =================================================
-        // GET AUTHORIZATION HEADER
-        // =================================================
-
         String authHeader =
                 request.getHeader("Authorization");
 
 
-        // =================================================
-        // NO JWT TOKEN
-        // =================================================
-
+ 
         if (authHeader == null ||
                 !authHeader.startsWith("Bearer ")) {
 
@@ -67,18 +52,12 @@ public class JwtAuthFilter extends OncePerRequestFilter {
 
         try {
 
-            // =================================================
-            // EXTRACT TOKEN
-            // =================================================
-
+          
             String token =
                     authHeader.substring(7);
 
 
-            // =================================================
-            // VALIDATE TOKEN
-            // =================================================
-
+         
             if (!jwtService.isTokenValid(token)) {
 
                 System.out.println(
@@ -90,10 +69,6 @@ public class JwtAuthFilter extends OncePerRequestFilter {
                 return;
             }
 
-
-            // =================================================
-            // EXTRACT USER DETAILS
-            // =================================================
 
             String email =
                     jwtService.extractEmail(token);
@@ -118,19 +93,13 @@ public class JwtAuthFilter extends OncePerRequestFilter {
             );
 
 
-            // =================================================
-            // CHECK IF ALREADY AUTHENTICATED
-            // =================================================
-
+     
             if (SecurityContextHolder
                     .getContext()
                     .getAuthentication() == null) {
 
 
-                // =================================================
-                // CREATE AUTHORITY
-                // =================================================
-
+           
                 SimpleGrantedAuthority authority =
                         new SimpleGrantedAuthority(
                                 "ROLE_" +
@@ -138,10 +107,7 @@ public class JwtAuthFilter extends OncePerRequestFilter {
                         );
 
 
-                // =================================================
-                // CREATE AUTHENTICATION
-                // =================================================
-
+            
                 UsernamePasswordAuthenticationToken authentication =
                         new UsernamePasswordAuthenticationToken(
                                 email,
@@ -150,19 +116,12 @@ public class JwtAuthFilter extends OncePerRequestFilter {
                         );
 
 
-                // =================================================
-                // STORE EMPLOYEE ID
-                // =================================================
-
                 authentication.setDetails(
                         employeeId
                 );
 
 
-                // =================================================
-                // SET SECURITY CONTEXT
-                // =================================================
-
+  
                 SecurityContextHolder
                         .getContext()
                         .setAuthentication(
@@ -179,10 +138,6 @@ public class JwtAuthFilter extends OncePerRequestFilter {
             );
         }
 
-
-        // =================================================
-        // CONTINUE REQUEST
-        // =================================================
 
         filterChain.doFilter(
                 request,

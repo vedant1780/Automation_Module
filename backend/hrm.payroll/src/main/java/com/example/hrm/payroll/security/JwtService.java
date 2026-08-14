@@ -30,10 +30,6 @@ public class JwtService {
     }
 
 
-    // =====================================================
-    // GENERATE TOKEN
-    // =====================================================
-
     public String generateToken(
             Long employeeId,
             String email,
@@ -62,10 +58,6 @@ public class JwtService {
     }
 
 
-    // =====================================================
-    // EXTRACT EMAIL
-    // =====================================================
-
     public String extractEmail(String token) {
 
         return extractAllClaims(token)
@@ -73,9 +65,6 @@ public class JwtService {
     }
 
 
-    // =====================================================
-    // EXTRACT EMPLOYEE ID
-    // =====================================================
 
     public Long extractEmployeeId(String token) {
 
@@ -86,9 +75,6 @@ public class JwtService {
     }
 
 
-    // =====================================================
-    // EXTRACT ROLE
-    // =====================================================
 
     public String extractRole(String token) {
 
@@ -96,10 +82,6 @@ public class JwtService {
                 .get("role", String.class);
     }
 
-
-    // =====================================================
-    // VALIDATE TOKEN
-    // =====================================================
 
     public boolean isTokenValid(String token) {
 
@@ -116,9 +98,6 @@ public class JwtService {
     }
 
 
-    // =====================================================
-    // CLAIMS
-    // =====================================================
 
     private Claims extractAllClaims(String token) {
 

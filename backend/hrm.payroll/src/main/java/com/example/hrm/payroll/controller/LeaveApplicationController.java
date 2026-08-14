@@ -25,10 +25,6 @@ public class LeaveApplicationController {
     private final LeaveEmailService leaveEmailService;
 
 
-    // =========================================================
-    // CONSTRUCTOR
-    // =========================================================
-
     public LeaveApplicationController(
             LeaveApplicationRepository leaveRepository,
             EmployeeRepository employeeRepository,
@@ -42,10 +38,6 @@ public class LeaveApplicationController {
     }
 
 
-    // =========================================================
-    // APPLY FOR LEAVE
-    // =========================================================
-
     @PostMapping("/apply/{employeeId}")
     public LeaveApplication applyLeave(
             @PathVariable Long employeeId,
@@ -56,10 +48,6 @@ public class LeaveApplicationController {
                         .orElseThrow(() ->
                                 new RuntimeException(
                                         "Employee not found"));
-
-        // -----------------------------------------------------
-        // Validate dates
-        // -----------------------------------------------------
 
         if (leave.getStartDate() == null ||
                 leave.getEndDate() == null) {
@@ -76,10 +64,6 @@ public class LeaveApplicationController {
         }
 
 
-        // -----------------------------------------------------
-        // Validate leave type
-        // -----------------------------------------------------
-
         if (leave.getLeaveType() == null ||
                 (!leave.getLeaveType().equalsIgnoreCase("CL")
                         && !leave.getLeaveType().equalsIgnoreCase("SL")
@@ -89,10 +73,6 @@ public class LeaveApplicationController {
                     "Invalid leave type. Use CL, SL or EL");
         }
 
-
-        // -----------------------------------------------------
-        // Calculate number of days
-        // -----------------------------------------------------
 
         long days =
                 ChronoUnit.DAYS.between(
@@ -112,20 +92,12 @@ public class LeaveApplicationController {
     }
 
 
-    // =========================================================
-    // GET ALL LEAVES
-    // =========================================================
-
     @GetMapping
     public List<LeaveApplication> getAllLeaves() {
 
         return leaveRepository.findAll();
     }
 
-
-    // =========================================================
-    // GET EMPLOYEE LEAVES
-    // =========================================================
 
     @GetMapping("/employee/{employeeId}")
     public List<LeaveApplication> getEmployeeLeaves(
@@ -141,29 +113,16 @@ public class LeaveApplicationController {
     }
 
 
-    // =========================================================
-    // APPROVE LEAVE
-    // =========================================================
-
     @Transactional
     @PutMapping("/{leaveId}/approve")
     public LeaveApplication approveLeave(
             @PathVariable Long leaveId) {
-
-        // -----------------------------------------------------
-        // Find leave
-        // -----------------------------------------------------
 
         LeaveApplication leave =
                 leaveRepository.findById(leaveId)
                         .orElseThrow(() ->
                                 new RuntimeException(
                                         "Leave application not found"));
-
-
-        // -----------------------------------------------------
-        // Check status
-        // -----------------------------------------------------
 
         if (!"PENDING".equalsIgnoreCase(
                 leave.getStatus())) {
@@ -175,10 +134,6 @@ public class LeaveApplicationController {
         }
 
 
-        // -----------------------------------------------------
-        // Validate leave type
-        // -----------------------------------------------------
-
         if (leave.getLeaveType() == null) {
 
             throw new RuntimeException(
@@ -188,10 +143,6 @@ public class LeaveApplicationController {
         String leaveType =
                 leave.getLeaveType().toUpperCase();
 
-
-        // -----------------------------------------------------
-        // Get number of days
-        // -----------------------------------------------------
 
         int days =
                 leave.getNumberOfDays();
@@ -203,10 +154,6 @@ public class LeaveApplicationController {
         }
 
 
-        // -----------------------------------------------------
-        // Find employee leave balance
-        // -----------------------------------------------------
-
         LeaveBalance balance =
                 leaveBalanceRepository
                         .findByEmployeeIdAndYear(
@@ -217,10 +164,6 @@ public class LeaveApplicationController {
                                 new RuntimeException(
                                         "Leave balance not found for employee"));
 
-
-        // =====================================================
-        // DEDUCT LEAVE BALANCE
-        // =====================================================
 
         switch (leaveType) {
 
@@ -285,26 +228,14 @@ public class LeaveApplicationController {
         }
 
 
-        // -----------------------------------------------------
-        // Save updated balance
-        // -----------------------------------------------------
-
         leaveBalanceRepository.save(balance);
 
-
-        // -----------------------------------------------------
-        // Change leave status
-        // -----------------------------------------------------
 
         leave.setStatus("APPROVED");
 
         LeaveApplication savedLeave =
                 leaveRepository.save(leave);
 
-
-        // -----------------------------------------------------
-        // SEND APPROVAL EMAIL
-        // -----------------------------------------------------
 
         leaveEmailService.sendLeaveApprovedEmail(
                 savedLeave
@@ -315,29 +246,16 @@ public class LeaveApplicationController {
     }
 
 
-    // =========================================================
-    // REJECT LEAVE
-    // =========================================================
-
     @Transactional
     @PutMapping("/{leaveId}/reject")
     public LeaveApplication rejectLeave(
             @PathVariable Long leaveId) {
-
-        // -----------------------------------------------------
-        // Find leave
-        // -----------------------------------------------------
 
         LeaveApplication leave =
                 leaveRepository.findById(leaveId)
                         .orElseThrow(() ->
                                 new RuntimeException(
                                         "Leave application not found"));
-
-
-        // -----------------------------------------------------
-        // Check status
-        // -----------------------------------------------------
 
         if (!"PENDING".equalsIgnoreCase(
                 leave.getStatus())) {
@@ -349,20 +267,12 @@ public class LeaveApplicationController {
         }
 
 
-        // -----------------------------------------------------
-        // Change status
-        // -----------------------------------------------------
-
         leave.setStatus("REJECTED");
 
 
         LeaveApplication savedLeave =
                 leaveRepository.save(leave);
 
-
-        // -----------------------------------------------------
-        // SEND REJECTION EMAIL
-        // -----------------------------------------------------
 
         leaveEmailService.sendLeaveRejectedEmail(
                 savedLeave

@@ -53,11 +53,6 @@ function Attendance() {
 
   const [message, setMessage] = useState("");
   const [error, setError] = useState("");
-
-  // =========================================================
-  // INITIALIZE LOGGED-IN USER
-  // =========================================================
-
   useEffect(() => {
     initializeUser();
   }, []);
@@ -65,10 +60,6 @@ function Attendance() {
   const initializeUser = async () => {
     try {
       setError("");
-
-      // -----------------------------------------------------
-      // Get logged-in user
-      // -----------------------------------------------------
 
       const storedUser = localStorage.getItem("user");
       const storedEmployee = localStorage.getItem("employee");
@@ -79,22 +70,6 @@ function Attendance() {
       }
 
       const parsedUser = JSON.parse(storedUser);
-
-      /*
-       * Your login API currently returns data like:
-       *
-       * {
-       *   id: 10,
-       *   name: "Souvik Mukherjee",
-       *   email: "...",
-       *   role: "EMPLOYEE",
-       *   employeeCode: "EMP006",
-       *   token: "..."
-       * }
-       *
-       * Therefore employee information may be directly
-       * inside response.data.
-       */
 
       let loggedInEmployee = null;
 
@@ -132,11 +107,6 @@ function Attendance() {
       ).toUpperCase();
 
       setRole(loggedInRole);
-
-      // =====================================================
-      // ADMIN / HR
-      // =====================================================
-
       if (
         loggedInRole === "ADMIN" ||
         loggedInRole === "HR"
@@ -144,11 +114,6 @@ function Attendance() {
         await fetchEmployees();
         return;
       }
-
-      // =====================================================
-      // EMPLOYEE
-      // =====================================================
-
       if (loggedInRole === "EMPLOYEE") {
         if (!loggedInEmployee?.id) {
           setError(
@@ -176,11 +141,6 @@ function Attendance() {
     }
   };
 
-  // =========================================================
-  // GET ALL EMPLOYEES
-  // ADMIN / HR ONLY
-  // =========================================================
-
   const fetchEmployees = async () => {
     try {
       setEmployeeLoading(true);
@@ -206,11 +166,6 @@ function Attendance() {
       setEmployeeLoading(false);
     }
   };
-
-  // =========================================================
-  // GET ATTENDANCE
-  // =========================================================
-
   const fetchAttendance = async (id) => {
     if (!id) {
       setAttendance([]);
@@ -242,10 +197,6 @@ function Attendance() {
     }
   };
 
-  // =========================================================
-  // ADMIN / HR EMPLOYEE CHANGE
-  // =========================================================
-
   const handleEmployeeChange = async (e) => {
     const id = e.target.value;
 
@@ -272,10 +223,6 @@ function Attendance() {
 
     await fetchAttendance(id);
   };
-
-  // =========================================================
-  // MARK ATTENDANCE
-  // =========================================================
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -331,17 +278,8 @@ function Attendance() {
     }
   };
 
-  // =========================================================
-  // UI
-  // =========================================================
-
   return (
     <div className="attendance">
-
-      {/* =====================================================
-          PAGE HEADER
-      ===================================================== */}
-
       <div className="page-header">
         <div>
           <h2>Attendance</h2>
@@ -353,11 +291,6 @@ function Attendance() {
           </p>
         </div>
       </div>
-
-      {/* =====================================================
-          MESSAGES
-      ===================================================== */}
-
       {message && (
         <div className="success">
           {message}
@@ -369,10 +302,6 @@ function Attendance() {
           {error}
         </div>
       )}
-
-      {/* =====================================================
-          ADMIN / HR EMPLOYEE SELECTION
-      ===================================================== */}
 
       {(role === "ADMIN" || role === "HR") && (
         <div className="card">
@@ -412,10 +341,6 @@ function Attendance() {
 
         </div>
       )}
-
-      {/* =====================================================
-          EMPLOYEE INFORMATION
-      ===================================================== */}
 
       {employee && (
         <div className="card">
@@ -469,10 +394,7 @@ function Attendance() {
         </div>
       )}
 
-      {/* =====================================================
-          MARK ATTENDANCE
-      ===================================================== */}
-
+     
       <div className="card">
 
         <h3>Mark Attendance</h3>
@@ -481,10 +403,6 @@ function Attendance() {
           onSubmit={handleSubmit}
           className="attendance-form"
         >
-
-          {/* =================================================
-              EMPLOYEE FIELD
-          ================================================= */}
 
           {role === "EMPLOYEE" ? (
 
@@ -530,10 +448,6 @@ function Attendance() {
 
           )}
 
-          {/* =================================================
-              DATE
-          ================================================= */}
-
           <div className="field">
 
             <label>
@@ -550,10 +464,6 @@ function Attendance() {
             />
 
           </div>
-
-          {/* =================================================
-              STATUS
-          ================================================= */}
 
           <div className="field">
 
@@ -586,10 +496,6 @@ function Attendance() {
 
           </div>
 
-          {/* =================================================
-              SUBMIT
-          ================================================= */}
-
           <button
             type="submit"
             className="add-button"
@@ -607,10 +513,6 @@ function Attendance() {
         </form>
 
       </div>
-
-      {/* =====================================================
-          ATTENDANCE RECORDS
-      ===================================================== */}
 
       <div className="card">
 

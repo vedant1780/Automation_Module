@@ -48,10 +48,6 @@ public class PayslipEmailController {
     }
 
 
-    // ==========================================
-    // GET ALL EMAIL LOGS
-    // ==========================================
-
     @GetMapping
     public List<PayslipEmailResponse> getAllEmailHistory() {
 
@@ -62,9 +58,6 @@ public class PayslipEmailController {
     }
 
 
-    // ==========================================
-    // GET EMPLOYEE EMAIL LOGS
-    // ==========================================
 
     @GetMapping("/employee/{employeeId}")
     public List<PayslipEmailResponse> getEmployeeEmailHistory(
@@ -78,10 +71,6 @@ public class PayslipEmailController {
     }
 
 
-    // ==========================================
-    // GET PAYROLL EMAIL LOGS
-    // ==========================================
-
     @GetMapping("/payroll/{payrollId}")
     public List<PayslipEmailResponse> getPayrollEmailHistory(
             @PathVariable Long payrollId) {
@@ -94,9 +83,6 @@ public class PayslipEmailController {
     }
 
 
-    // ==========================================
-    // RESPONSE
-    // ==========================================
 
     private PayslipEmailResponse toResponse(
             PayslipEmail email) {

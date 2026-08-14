@@ -38,19 +38,10 @@ public class LeaveBalanceController {
                 leaveBalanceRepository;
     }
 
-
-    // ==========================================================
-    // GET EMPLOYEE LEAVE BALANCE
-    // ==========================================================
-
     @GetMapping("/employee/{employeeId}/balance")
     public ResponseEntity<?> getLeaveBalance(
             @PathVariable Long employeeId) {
 
-
-        // ------------------------------------------------------
-        // Find employee
-        // ------------------------------------------------------
 
         Employee employee =
                 employeeRepository.findById(employeeId)
@@ -65,10 +56,6 @@ public class LeaveBalanceController {
                 Year.now().getValue();
 
 
-        // ------------------------------------------------------
-        // Find balance
-        // ------------------------------------------------------
-
         LeaveBalance leaveBalance =
                 leaveBalanceRepository
                         .findByEmployeeIdAndYear(
@@ -76,10 +63,6 @@ public class LeaveBalanceController {
                                 currentYear
                         )
                         .orElseGet(() -> {
-
-                            // ----------------------------------
-                            // Automatically create balance
-                            // ----------------------------------
 
                             LeaveBalance newBalance =
                                     new LeaveBalance();
@@ -110,9 +93,6 @@ public class LeaveBalanceController {
                         });
 
 
-        // ------------------------------------------------------
-        // Get approved leaves
-        // ------------------------------------------------------
 
         List<LeaveApplication> leaves =
                 leaveApplicationRepository
@@ -121,10 +101,6 @@ public class LeaveBalanceController {
                                 "APPROVED"
                         );
 
-
-        // ------------------------------------------------------
-        // Calculate used leaves
-        // ------------------------------------------------------
 
         int casualLeaveUsed = 0;
         int sickLeaveUsed = 0;
@@ -173,9 +149,6 @@ public class LeaveBalanceController {
         }
 
 
-        // ------------------------------------------------------
-        // Remaining balance
-        // ------------------------------------------------------
 
         int casualLeaveRemaining =
                 Math.max(
@@ -201,10 +174,6 @@ public class LeaveBalanceController {
                 );
 
 
-        // ------------------------------------------------------
-        // Response
-        // ------------------------------------------------------
-
         Map<String, Object> response =
                 new HashMap<>();
 
@@ -225,9 +194,6 @@ public class LeaveBalanceController {
         );
 
 
-        // ------------------------------------------------------
-        // Casual Leave
-        // ------------------------------------------------------
 
         response.put(
                 "casualLeaveTotal",
@@ -244,11 +210,6 @@ public class LeaveBalanceController {
                 casualLeaveRemaining
         );
 
-
-        // ------------------------------------------------------
-        // Sick Leave
-        // ------------------------------------------------------
-
         response.put(
                 "sickLeaveTotal",
                 leaveBalance.getSickLeave()
@@ -264,10 +225,6 @@ public class LeaveBalanceController {
                 sickLeaveRemaining
         );
 
-
-        // ------------------------------------------------------
-        // Earned Leave
-        // ------------------------------------------------------
 
         response.put(
                 "earnedLeaveTotal",
@@ -288,10 +245,6 @@ public class LeaveBalanceController {
         return ResponseEntity.ok(response);
     }
 
-
-    // ==========================================================
-    // CALCULATE LEAVE DAYS
-    // ==========================================================
 
     private int calculateLeaveDays(
             LocalDate startDate,
