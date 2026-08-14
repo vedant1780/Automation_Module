@@ -24,4 +24,6 @@ public interface PayslipEmailRepository
     @Query("DELETE FROM PayslipEmail p WHERE p.payroll.id = :payrollId")
     void deleteByPayrollId(Long payrollId);
     Optional<PayslipEmail> findByPayrollIdAndStatus(Long payrollId, String status );
+    @Transactional
+    void deleteByEmployeeId(Long employeeId);
 }

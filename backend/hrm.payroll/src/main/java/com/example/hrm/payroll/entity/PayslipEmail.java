@@ -19,7 +19,7 @@ public class PayslipEmail {
     @Setter
     @JsonIgnore
     @ManyToOne
-    @JoinColumn(name = "payroll_id")
+    @JoinColumn(name = "payslip_id")
     private Payroll payroll;
 
     @Setter

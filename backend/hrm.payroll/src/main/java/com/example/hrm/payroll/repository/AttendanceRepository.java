@@ -1,5 +1,6 @@
 package com.example.hrm.payroll.repository;
 import com.example.hrm.payroll.entity.Attendance;
+import jakarta.transaction.Transactional;
 import org.springframework.data.jpa.repository.JpaRepository;
 
 import java.time.LocalDate;
@@ -13,4 +14,6 @@ public interface AttendanceRepository
             LocalDate startDate,
             LocalDate endDate
     );
+    @Transactional
+    void deleteByEmployeeId(Long employeeId);
 }

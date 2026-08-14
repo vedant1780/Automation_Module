@@ -2,9 +2,16 @@ package com.example.hrm.payroll.controller;
 
 import com.example.hrm.payroll.entity.Employee;
 import com.example.hrm.payroll.entity.LeaveBalance;
+
 import com.example.hrm.payroll.repository.EmployeeRepository;
 import com.example.hrm.payroll.repository.LeaveBalanceRepository;
+import com.example.hrm.payroll.repository.EmployeeSalaryRepository;
+import com.example.hrm.payroll.repository.LeaveApplicationRepository;
+import com.example.hrm.payroll.repository.AttendanceRepository;
+import com.example.hrm.payroll.repository.PayrollRepository;
+import com.example.hrm.payroll.repository.PayslipEmailRepository;
 
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.*;
 
 import java.time.Year;
@@ -17,21 +24,36 @@ public class EmployeeController {
 
     private final EmployeeRepository employeeRepository;
     private final LeaveBalanceRepository leaveBalanceRepository;
+    private final EmployeeSalaryRepository employeeSalaryRepository;
+    private final LeaveApplicationRepository leaveApplicationRepository;
+    private final AttendanceRepository attendanceRepository;
+    private final PayrollRepository payrollRepository;
+    private final PayslipEmailRepository payslipEmailRepository;
 
     public EmployeeController(
             EmployeeRepository employeeRepository,
-            LeaveBalanceRepository leaveBalanceRepository) {
+            LeaveBalanceRepository leaveBalanceRepository,
+            EmployeeSalaryRepository employeeSalaryRepository,
+            LeaveApplicationRepository leaveApplicationRepository,
+            AttendanceRepository attendanceRepository,
+            PayrollRepository payrollRepository,
+            PayslipEmailRepository payslipEmailRepository) {
 
         this.employeeRepository = employeeRepository;
         this.leaveBalanceRepository = leaveBalanceRepository;
+        this.employeeSalaryRepository = employeeSalaryRepository;
+        this.leaveApplicationRepository = leaveApplicationRepository;
+        this.attendanceRepository = attendanceRepository;
+        this.payrollRepository = payrollRepository;
+        this.payslipEmailRepository = payslipEmailRepository;
     }
-
 
     // ==========================================================
     // CREATE EMPLOYEE
     // ==========================================================
 
     @PostMapping
+    @Transactional
     public Employee createEmployee(
             @RequestBody Employee employee) {
 
@@ -42,14 +64,12 @@ public class EmployeeController {
         Employee savedEmployee =
                 employeeRepository.save(employee);
 
-
         // ------------------------------------------
         // Create leave balance automatically
         // ------------------------------------------
 
         int currentYear =
                 Year.now().getValue();
-
 
         LeaveBalance leaveBalance =
                 new LeaveBalance();
@@ -63,18 +83,14 @@ public class EmployeeController {
 
         leaveBalance.setYear(currentYear);
 
-
-        leaveBalanceRepository.save(
-                leaveBalance
-        );
-
+        leaveBalanceRepository.save(leaveBalance);
 
         return savedEmployee;
     }
 
 
     // ==========================================================
-    // GET EMPLOYEES
+    // GET ALL EMPLOYEES
     // ==========================================================
 
     @GetMapping
@@ -85,10 +101,28 @@ public class EmployeeController {
 
 
     // ==========================================================
+    // GET EMPLOYEE BY ID
+    // ==========================================================
+
+    @GetMapping("/{id}")
+    public Employee getEmployee(
+            @PathVariable Long id) {
+
+        return employeeRepository
+                .findById(id)
+                .orElseThrow(() ->
+                        new RuntimeException(
+                                "Employee not found"
+                        ));
+    }
+
+
+    // ==========================================================
     // UPDATE EMPLOYEE
     // ==========================================================
 
     @PutMapping("/{id}")
+    @Transactional
     public Employee updateEmployee(
             @PathVariable Long id,
             @RequestBody Employee employee) {
@@ -98,9 +132,7 @@ public class EmployeeController {
                         .orElseThrow(() ->
                                 new RuntimeException(
                                         "Employee not found"
-                                )
-                        );
-
+                                ));
 
         existingEmployee.setEmployeeCode(
                 employee.getEmployeeCode()
@@ -123,9 +155,6 @@ public class EmployeeController {
         );
 
         // Password and role intentionally unchanged
-        // existingEmployee.setPassword(employee.getPassword());
-        // existingEmployee.setRole(employee.getRole());
-
 
         return employeeRepository.save(
                 existingEmployee
@@ -138,16 +167,70 @@ public class EmployeeController {
     // ==========================================================
 
     @DeleteMapping("/{id}")
+    @Transactional
     public String deleteEmployee(
             @PathVariable Long id) {
 
-        if (!employeeRepository.existsById(id)) {
+        // ------------------------------------------
+        // Check employee
+        // ------------------------------------------
 
-            return "Employee not found";
-        }
+        Employee employee =
+                employeeRepository.findById(id)
+                        .orElseThrow(() ->
+                                new RuntimeException(
+                                        "Employee not found"
+                                ));
 
 
-        // Delete leave balance first
+        // ======================================================
+        // DELETE CHILD RECORDS FIRST
+        // ======================================================
+
+        // ------------------------------------------------------
+        // 1. Delete payslip email records
+        // ------------------------------------------------------
+
+        payslipEmailRepository
+                .deleteByEmployeeId(id);
+
+
+        // ------------------------------------------------------
+        // 2. Delete payroll records
+        // ------------------------------------------------------
+
+        payrollRepository
+                .deleteByEmployeeId(id);
+
+
+        // ------------------------------------------------------
+        // 3. Delete employee salary assignments
+        // ------------------------------------------------------
+
+        employeeSalaryRepository
+                .deleteByEmployeeId(id);
+
+
+        // ------------------------------------------------------
+        // 4. Delete leave applications
+        // ------------------------------------------------------
+
+        leaveApplicationRepository
+                .deleteByEmployeeId(id);
+
+
+        // ------------------------------------------------------
+        // 5. Delete attendance records
+        // ------------------------------------------------------
+
+        attendanceRepository
+                .deleteByEmployeeId(id);
+
+
+        // ------------------------------------------------------
+        // 6. Delete leave balance
+        // ------------------------------------------------------
+
         leaveBalanceRepository
                 .findByEmployeeId(id)
                 .ifPresent(
@@ -155,10 +238,13 @@ public class EmployeeController {
                 );
 
 
-        employeeRepository.deleteById(id);
+        // ======================================================
+        // DELETE EMPLOYEE LAST
+        // ======================================================
+
+        employeeRepository.delete(employee);
 
 
         return "Employee deleted successfully";
     }
 }
-
