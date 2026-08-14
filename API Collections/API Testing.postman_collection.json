@@ -1,0 +1,386 @@
+{
+  "info": {
+    "_postman_id": "ecb9dd0a-ea83-414d-b5b2-4fddcd3c727e",
+    "name": "API Testing",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+    "_exporter_id": "49174802",
+    "_collection_link": "https://go.postman.co/collection/49174802-ecb9dd0a-ea83-414d-b5b2-4fddcd3c727e?source=collection_link"
+  },
+  "item": [
+    {
+      "name": "Employee List",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "http://localhost:8080/api/employees",
+          "protocol": "http",
+          "host": [
+            "localhost"
+          ],
+          "port": "8080",
+          "path": [
+            "api",
+            "employees"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "Attendance List",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "http://localhost:8080/api/attendance/1",
+          "protocol": "http",
+          "host": [
+            "localhost"
+          ],
+          "port": "8080",
+          "path": [
+            "api",
+            "attendance",
+            "1"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "Salary Structure",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "http://localhost:8080/api/salary-structures/1",
+          "protocol": "http",
+          "host": [
+            "localhost"
+          ],
+          "port": "8080",
+          "path": [
+            "api",
+            "salary-structures",
+            "1"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "Payroll",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "http://localhost:8080/api/payroll",
+          "protocol": "http",
+          "host": [
+            "localhost"
+          ],
+          "port": "8080",
+          "path": [
+            "api",
+            "payroll"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "PaySlip",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "http://localhost:8080/api/payroll/1/payslip",
+          "protocol": "http",
+          "host": [
+            "localhost"
+          ],
+          "port": "8080",
+          "path": [
+            "api",
+            "payroll",
+            "1",
+            "payslip"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "Leave History of Employee",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "http://localhost:8080/api/leaves",
+          "protocol": "http",
+          "host": [
+            "localhost"
+          ],
+          "port": "8080",
+          "path": [
+            "api",
+            "leaves"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "Leave Balance",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "http://localhost:8080/api/leaves/employee/1/balance",
+          "protocol": "http",
+          "host": [
+            "localhost"
+          ],
+          "port": "8080",
+          "path": [
+            "api",
+            "leaves",
+            "employee",
+            "1",
+            "balance"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "Add Employee",
+      "request": {
+        "method": "POST",
+        "header": [],
+        "body": {
+          "mode": "raw",
+          "raw": "{\r\n  \"employeeCode\": \"EMP-1024\",\r\n  \"name\": \"Jane Doe\",\r\n  \"email\": \"jane.doe@example.com\",\r\n  \"department\": \"Human Resources\",\r\n  \"designation\": \"HR Manager\",\r\n  \"password\": \"$2a$12$eImiTXuWVxfMjp782A9.A.eB7y19fD8jQY3874G7q.\",\r\n  \"role\": \"ROLE_HR_ADMIN\"\r\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": {
+          "raw": "http://localhost:8080/api/employees",
+          "protocol": "http",
+          "host": [
+            "localhost"
+          ],
+          "port": "8080",
+          "path": [
+            "api",
+            "employees"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "Attendance",
+      "request": {
+        "method": "POST",
+        "header": [],
+        "body": {
+          "mode": "raw",
+          "raw": "{\r\n    \"AttendanceDate\":\"17-09-2026\",\r\n    \"status\":\"PRESENT\"\r\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": {
+          "raw": "http://localhost:8080/api/attendance/1",
+          "protocol": "http",
+          "host": [
+            "localhost"
+          ],
+          "port": "8080",
+          "path": [
+            "api",
+            "attendance",
+            "1"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "Authentication",
+      "request": {
+        "method": "POST",
+        "header": [],
+        "body": {
+          "mode": "raw",
+          "raw": "{\r\n    \"email\":\"rahul@example.com\",\r\n    \"password\":\"123456\"\r\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": {
+          "raw": "http://localhost:8080/api/auth/login",
+          "protocol": "http",
+          "host": [
+            "localhost"
+          ],
+          "port": "8080",
+          "path": [
+            "api",
+            "auth",
+            "login"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "Employee Salary List",
+      "protocolProfileBehavior": {
+        "disableBodyPruning": true
+      },
+      "request": {
+        "method": "GET",
+        "header": [],
+        "body": {
+          "mode": "raw",
+          "raw": ""
+        },
+        "url": {
+          "raw": "http://localhost:8080/api/employee-salary",
+          "protocol": "http",
+          "host": [
+            "localhost"
+          ],
+          "port": "8080",
+          "path": [
+            "api",
+            "employee-salary"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "Employee Salary Fetch By Employee ID",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "localhost:8080/api/employee-salary/4",
+          "host": [
+            "localhost"
+          ],
+          "port": "8080",
+          "path": [
+            "api",
+            "employee-salary",
+            "4"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "Employee Salary Assignment",
+      "request": {
+        "method": "POST",
+        "header": [],
+        "url": {
+          "raw": "http://localhost:8080/api/employee-salary/4/2?effectiveFrom=2026-08-14",
+          "protocol": "http",
+          "host": [
+            "localhost"
+          ],
+          "port": "8080",
+          "path": [
+            "api",
+            "employee-salary",
+            "4",
+            "2"
+          ],
+          "query": [
+            {
+              "key": "effectiveFrom",
+              "value": "2026-08-14"
+            }
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "Email Sending",
+      "request": {
+        "method": "POST",
+        "header": [],
+        "url": {
+          "raw": "http://localhost:8080/api/payslip-emails/send/2",
+          "protocol": "http",
+          "host": [
+            "localhost"
+          ],
+          "port": "8080",
+          "path": [
+            "api",
+            "payslip-emails",
+            "send",
+            "2"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "Email Logs",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "http://localhost:8080/api/payslip-emails",
+          "protocol": "http",
+          "host": [
+            "localhost"
+          ],
+          "port": "8080",
+          "path": [
+            "api",
+            "payslip-emails"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "Payroll Generation",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "http://localhost:8080/api/payroll/1/payslip",
+          "protocol": "http",
+          "host": [
+            "localhost"
+          ],
+          "port": "8080",
+          "path": [
+            "api",
+            "payroll",
+            "1",
+            "payslip"
+          ]
+        }
+      },
+      "response": []
+    }
+  ]
+}
