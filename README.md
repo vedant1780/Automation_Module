@@ -313,7 +313,7 @@ USE hrms;
 ## 1. Clone the Repository
 
 ```bash
-git clone https://github.com/YOUR_USERNAME/hrms-payroll.git
+git clone https://github.com/vedant1780/hrms-payroll.git
 ```
 
 Move into the backend directory:
