@@ -1,0 +1,214 @@
+:root {
+  --hrms-bg: #f4f6f9;
+  --hrms-card: #ffffff;
+  --hrms-primary: #1b4965;
+  --hrms-primary-hover: #143a52;
+  --hrms-ring: #5fa8d3;
+  --hrms-text: #1f2a37;
+  --hrms-muted: #6b7785;
+  --hrms-border: #e1e5ea;
+  --hrms-success-bg: #eafaf1;
+  --hrms-success-text: #15803d;
+  --hrms-error-bg: #fdeded;
+  --hrms-error-text: #b42318;
+}
+
+.employee-salary {
+  font-family: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  color: var(--hrms-text);
+}
+
+/* ---------- Page header ---------- */
+
+.page-header {
+  margin-bottom: 20px;
+}
+
+.page-header h2 {
+  font-size: 20px;
+  font-weight: 700;
+  margin: 0 0 2px;
+  letter-spacing: -0.01em;
+}
+
+.page-header p {
+  font-size: 13.5px;
+  color: var(--hrms-muted);
+  margin: 0;
+}
+
+/* ---------- Banners ---------- */
+
+.success,
+.error {
+  padding: 10px 14px;
+  border-radius: 8px;
+  font-size: 13.5px;
+  margin-bottom: 16px;
+}
+
+.success {
+  background: var(--hrms-success-bg);
+  color: var(--hrms-success-text);
+}
+
+.error {
+  background: var(--hrms-error-bg);
+  color: var(--hrms-error-text);
+}
+
+/* ---------- Card ---------- */
+
+.card {
+  background: var(--hrms-card);
+  border: 1px solid var(--hrms-border);
+  border-radius: 12px;
+  padding: 22px 24px;
+  margin-bottom: 20px;
+}
+
+.card h3 {
+  font-size: 15px;
+  font-weight: 700;
+  margin: 0 0 16px;
+}
+
+/* ---------- Form ---------- */
+
+.salary-form {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 16px;
+  align-items: end;
+}
+
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.field label {
+  font-size: 12.5px;
+  font-weight: 600;
+  color: var(--hrms-text);
+}
+
+.field select,
+.field input {
+  padding: 10px 12px;
+  border-radius: 8px;
+  border: 1px solid var(--hrms-border);
+  font-size: 14px;
+  color: var(--hrms-text);
+  background: #fbfcfd;
+  outline: none;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+.field select:focus,
+.field input:focus {
+  border-color: var(--hrms-ring);
+  box-shadow: 0 0 0 3px rgba(95, 168, 211, 0.25);
+  background: #fff;
+}
+
+.add-button {
+  grid-column: 1 / -1;
+  justify-self: start;
+  padding: 10px 22px;
+  border: none;
+  border-radius: 8px;
+  background: var(--hrms-primary);
+  color: #fff;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.15s ease;
+}
+
+.add-button:hover {
+  background: var(--hrms-primary-hover);
+}
+
+.add-button:focus-visible {
+  outline: 2px solid var(--hrms-ring);
+  outline-offset: 2px;
+}
+
+/* ---------- Table ---------- */
+
+.table-container {
+  overflow-x: auto;
+}
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+thead th {
+  text-align: left;
+  font-size: 12px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  color: var(--hrms-muted);
+  padding: 10px 12px;
+  border-bottom: 1px solid var(--hrms-border);
+}
+
+tbody td {
+  padding: 12px;
+  font-size: 13.5px;
+  border-bottom: 1px solid var(--hrms-border);
+}
+
+tbody tr:last-child td {
+  border-bottom: none;
+}
+
+tbody tr:hover {
+  background: #fafbfc;
+}
+
+td.empty {
+  text-align: center;
+  color: var(--hrms-muted);
+  padding: 24px;
+}
+
+.empty-state {
+  text-align: center;
+  color: var(--hrms-muted);
+  font-size: 13.5px;
+  padding: 24px;
+}
+
+/* ---------- Status badges ---------- */
+
+.status-badge {
+  display: inline-block;
+  padding: 3px 10px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.badge-active {
+  background: #eafaf1;
+  color: #15803d;
+}
+
+.badge-inactive {
+  background: #f3f4f6;
+  color: #6b7785;
+}
+
+/* ---------- Responsive ---------- */
+
+@media (max-width: 720px) {
+  .salary-form {
+    grid-template-columns: 1fr;
+  }
+}

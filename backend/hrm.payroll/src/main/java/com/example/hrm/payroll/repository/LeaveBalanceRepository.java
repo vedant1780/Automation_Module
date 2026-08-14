@@ -12,4 +12,9 @@ public interface LeaveBalanceRepository
             Long employeeId,
             int year
     );
+
+    Optional<LeaveBalance> findByEmployeeId(
+            Long employeeId
+    );
 }
+

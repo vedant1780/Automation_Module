@@ -1,338 +1,212 @@
-
 import { useEffect, useState } from "react";
 import axios from "axios";
+import "./AddEmployee.css";
 
-function AddEmployee({
-  onEmployeeAdded,
-  editingEmployee,
-  onEditComplete
-}) {
+const ROLE_OPTIONS = [
+  { value: "ADMIN", label: "Admin" },
+  { value: "HR", label: "HR" },
+  { value: "EMPLOYEE", label: "Employee" },
+];
 
-  const emptyEmployee = {
-    employeeCode: "",
-    name: "",
-    email: "",
-    department: "",
-    designation: "",
-    password: "",
-    role: ""
-  };
+const emptyEmployee = {
+  employeeCode: "",
+  name: "",
+  email: "",
+  department: "",
+  designation: "",
+  password: "",
+  role: "",
+};
 
+function AddEmployee({ onEmployeeAdded, editingEmployee, onEditComplete }) {
   const [employee, setEmployee] = useState(emptyEmployee);
-
   const [message, setMessage] = useState("");
   const [error, setError] = useState("");
 
-
-  // =====================================================
-  // LOAD EMPLOYEE DATA WHEN EDIT IS CLICKED
-  // =====================================================
-
+  // Load employee data when edit is clicked.
+  // Password is intentionally left blank — we never show or resend
+  // the existing password. It's only updated if the admin types a new one.
   useEffect(() => {
-
     if (editingEmployee) {
-
       setEmployee({
         employeeCode: editingEmployee.employeeCode || "",
         name: editingEmployee.name || "",
         email: editingEmployee.email || "",
         department: editingEmployee.department || "",
         designation: editingEmployee.designation || "",
-        password: editingEmployee.password || "",
-        role: editingEmployee.role || ""
+        password: "",
+        role: editingEmployee.role || "",
       });
 
       setMessage("");
       setError("");
     }
-
   }, [editingEmployee]);
 
-
-  // =====================================================
-  // HANDLE INPUT
-  // =====================================================
-
   const handleChange = (e) => {
-
     const { name, value } = e.target;
-
-    setEmployee({
-      ...employee,
-      [name]: value
-    });
-
+    setEmployee({ ...employee, [name]: value });
   };
 
-
-  // =====================================================
-  // SUBMIT
-  // =====================================================
-
   const handleSubmit = async (e) => {
-
     e.preventDefault();
-
     setMessage("");
     setError("");
 
     try {
-
-      // =================================================
-      // EDIT EMPLOYEE
-      // =================================================
-
       if (editingEmployee) {
+        // Only send the password if the admin actually typed a new one.
+        const payload = { ...employee };
+        if (!payload.password) {
+          delete payload.password;
+        }
 
         const response = await axios.put(
           `http://localhost:8080/api/employees/${editingEmployee.id}`,
-          employee
+          payload
         );
 
-        console.log(
-          "Employee updated:",
-          response.data
-        );
-
+        console.log("Employee updated:", response.data);
         setMessage("Employee updated successfully!");
-
-
-        // Refresh employee table
 
         if (onEmployeeAdded) {
           await onEmployeeAdded();
         }
-
-
-        // Close edit mode
 
         if (onEditComplete) {
           onEditComplete();
         }
+      } else {
+        const response = await axios.post("http://localhost:8080/api/employees", employee);
 
-      }
-
-      // =================================================
-      // ADD EMPLOYEE
-      // =================================================
-
-      else {
-
-        const response = await axios.post(
-          "http://localhost:8080/api/employees",
-          employee
-        );
-
-        console.log(
-          "Employee created:",
-          response.data
-        );
-
+        console.log("Employee created:", response.data);
         setMessage("Employee added successfully!");
 
-
-        // Clear form
-
         setEmployee(emptyEmployee);
-
-
-        // Refresh employee table
 
         if (onEmployeeAdded) {
           await onEmployeeAdded();
         }
-
       }
-
     } catch (err) {
-
-      console.error(
-        "Employee operation failed:",
-        err
-      );
-
-      setError(
-        editingEmployee
-          ? "Failed to update employee"
-          : "Failed to add employee"
-      );
-
+      console.error("Employee operation failed:", err);
+      setError(editingEmployee ? "Failed to update employee" : "Failed to add employee");
     }
-
   };
 
-
-  // =====================================================
-  // UI
-  // =====================================================
-
   return (
+    <div className="card">
+      <h3>{editingEmployee ? "Edit Employee" : "Add Employee"}</h3>
 
-    <div className="add-employee">
+      {message && <div className="success">{message}</div>}
+      {error && <div className="error">{error}</div>}
 
-      <h3>
-
-        {editingEmployee
-          ? "Edit Employee"
-          : "Add Employee"}
-
-      </h3>
-
-
-      {/* SUCCESS MESSAGE */}
-
-      {message && (
-
-        <div className="success">
-
-          {message}
-
+      <form onSubmit={handleSubmit} className="employee-form">
+        <div className="field">
+          <label>Employee Code</label>
+          <input
+            type="text"
+            name="employeeCode"
+            placeholder="e.g. EMP001"
+            value={employee.employeeCode}
+            onChange={handleChange}
+            required
+          />
         </div>
 
-      )}
-
-
-      {/* ERROR MESSAGE */}
-
-      {error && (
-
-        <div className="error">
-
-          {error}
-
+        <div className="field">
+          <label>Name</label>
+          <input
+            type="text"
+            name="name"
+            placeholder="Employee name"
+            value={employee.name}
+            onChange={handleChange}
+            required
+          />
         </div>
 
-      )}
+        <div className="field">
+          <label>Email</label>
+          <input
+            type="email"
+            name="email"
+            placeholder="name@company.com"
+            value={employee.email}
+            onChange={handleChange}
+            required
+          />
+        </div>
 
+        <div className="field">
+          <label>Department</label>
+          <input
+            type="text"
+            name="department"
+            placeholder="e.g. Engineering"
+            value={employee.department}
+            onChange={handleChange}
+          />
+        </div>
 
-      <form onSubmit={handleSubmit}>
+        <div className="field">
+          <label>Designation</label>
+          <input
+            type="text"
+            name="designation"
+            placeholder="e.g. Software Engineer"
+            value={employee.designation}
+            onChange={handleChange}
+          />
+        </div>
 
+        <div className="field">
+          <label>Role</label>
+          <select name="role" value={employee.role} onChange={handleChange} required>
+            <option value="">Select role</option>
+            {ROLE_OPTIONS.map((opt) => (
+              <option key={opt.value} value={opt.value}>
+                {opt.label}
+              </option>
+            ))}
+          </select>
+        </div>
 
-        {/* EMPLOYEE CODE */}
+        <div className="field">
+          <label>Password</label>
+          <input
+            type="password"
+            name="password"
+            placeholder={editingEmployee ? "Leave blank to keep current password" : "Set a password"}
+            value={employee.password}
+            onChange={handleChange}
+            required={!editingEmployee}
+          />
+        </div>
 
-        <input
-          type="text"
-          name="employeeCode"
-          placeholder="Employee Code"
-          value={employee.employeeCode}
-          onChange={handleChange}
-          required
-        />
-
-
-        {/* NAME */}
-
-        <input
-          type="text"
-          name="name"
-          placeholder="Employee Name"
-          value={employee.name}
-          onChange={handleChange}
-          required
-        />
-
-
-        {/* EMAIL */}
-
-        <input
-          type="email"
-          name="email"
-          placeholder="Email"
-          value={employee.email}
-          onChange={handleChange}
-          required
-        />
-
-
-        {/* DEPARTMENT */}
-
-        <input
-          type="text"
-          name="department"
-          placeholder="Department"
-          value={employee.department}
-          onChange={handleChange}
-        />
-
-
-        {/* DESIGNATION */}
-
-        <input
-          type="text"
-          name="designation"
-          placeholder="Designation"
-          value={employee.designation}
-          onChange={handleChange}
-        />
-
-
-        {/* PASSWORD */}
-
-        <input
-          type="password"
-          name="password"
-          placeholder="Password"
-          value={employee.password}
-          onChange={handleChange}
-        />
-
-
-        {/* ROLE */}
-
-        <input
-          type="text"
-          name="role"
-          placeholder="Role"
-          value={employee.role}
-          onChange={handleChange}
-        />
-
-
-        {/* SUBMIT */}
-
-        <button
-          type="submit"
-          className="add-button"
-        >
-
-          {editingEmployee
-            ? "Update Employee"
-            : "Add Employee"}
-
-        </button>
-
-
-        {/* CANCEL EDIT */}
-
-        {editingEmployee && (
-
-          <button
-            type="button"
-            className="delete-button"
-            onClick={() => {
-
-              setEmployee(emptyEmployee);
-
-              if (onEditComplete) {
-                onEditComplete();
-              }
-
-            }}
-          >
-
-            Cancel
-
+        <div className="form-actions">
+          <button type="submit" className="add-button">
+            {editingEmployee ? "Update Employee" : "Add Employee"}
           </button>
 
-        )}
-
+          {editingEmployee && (
+            <button
+              type="button"
+              className="cancel-button"
+              onClick={() => {
+                setEmployee(emptyEmployee);
+                if (onEditComplete) {
+                  onEditComplete();
+                }
+              }}
+            >
+              Cancel
+            </button>
+          )}
+        </div>
       </form>
-
     </div>
-
   );
 }
 
-
 export default AddEmployee;
-

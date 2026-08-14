@@ -1,921 +1,494 @@
 import React, { useEffect, useState } from "react";
 import api from "./axiosConfig";
+import "./LeaveApplication.css";
 
 const API_URL = "http://localhost:8080/api/leaves";
 const EMPLOYEE_API_URL = "http://localhost:8080/api/employees";
 
+const LEAVE_TYPES = [
+  { value: "CL", label: "Casual Leave (CL)" },
+  { value: "SL", label: "Sick Leave (SL)" },
+  { value: "EL", label: "Earned Leave (EL)" },
+];
+
 function LeaveApplication() {
-
-    const [employees, setEmployees] = useState([]);
-
-    const [employeeId, setEmployeeId] = useState("");
-    const [leaveType, setLeaveType] = useState("CL");
-    const [startDate, setStartDate] = useState("");
-    const [endDate, setEndDate] = useState("");
-    const [reason, setReason] = useState("");
-
-    const [leaves, setLeaves] = useState([]);
-    const [loading, setLoading] = useState(false);
-    const [employeeLoading, setEmployeeLoading] = useState(false);
-    const [message, setMessage] = useState("");
-
-    // ==========================================
-    // GET EMPLOYEE LIST
-    // ==========================================
-
-    const getEmployees = async () => {
-
-        try {
-
-            setEmployeeLoading(true);
-
-            const response = await api.get(
-                EMPLOYEE_API_URL
-            );
-
-            setEmployees(response.data);
-
-        } catch (error) {
-
-            console.error(error);
-
-            setMessage(
-                "Unable to fetch employee list"
-            );
-
-        } finally {
-
-            setEmployeeLoading(false);
-
-        }
-    };
-
-
-    // ==========================================
-    // CALCULATE DAYS
-    // ==========================================
-
-    const calculateDays = () => {
-
-        if (!startDate || !endDate) {
-            return 0;
-        }
-
-        const start = new Date(startDate);
-        const end = new Date(endDate);
-
-        const difference =
-            Math.ceil(
-                (end - start) /
-                (1000 * 60 * 60 * 24)
-            ) + 1;
-
-        return difference > 0
-            ? difference
-            : 0;
-    };
-
-
-    // ==========================================
-    // APPLY LEAVE
-    // ==========================================
-
-    const applyLeave = async (e) => {
-
-        e.preventDefault();
-
-        if (!employeeId) {
-            setMessage("Please select an employee");
-            return;
-        }
-
-        if (!startDate || !endDate) {
-            setMessage(
-                "Please select start and end date"
-            );
-            return;
-        }
-
-        if (new Date(endDate) < new Date(startDate)) {
-
-            setMessage(
-                "End date cannot be before start date"
-            );
-
-            return;
-        }
-
-        try {
-
-            setLoading(true);
-            setMessage("");
-
-            const leaveData = {
-
-                leaveType: leaveType,
-
-                startDate: startDate,
-
-                endDate: endDate,
-
-                reason: reason
-
-            };
-
-            await api.post(
-                `${API_URL}/apply/${employeeId}`,
-                leaveData
-            );
-
-            setMessage(
-                "Leave applied successfully!"
-            );
-
-            setLeaveType("CL");
-            setStartDate("");
-            setEndDate("");
-            setReason("");
-
-            getEmployeeLeaves();
-
-        } catch (error) {
-
-            console.error(error);
-
-            setMessage(
-                error.response?.data?.message ||
-                error.response?.data ||
-                "Failed to apply leave"
-            );
-
-        } finally {
-
-            setLoading(false);
-
-        }
-    };
-
-
-    // ==========================================
-    // GET EMPLOYEE LEAVE HISTORY
-    // ==========================================
-
-    const getEmployeeLeaves = async () => {
-
-        if (!employeeId) {
-
-            setLeaves([]);
-
-            return;
-        }
-
-        try {
-
-            const response = await api.get(
-                `${API_URL}/employee/${employeeId}`
-            );
-
-            setLeaves(response.data);
-
-        } catch (error) {
-
-            console.error(error);
-
-            setMessage(
-                "Unable to fetch leave applications"
-            );
-
-        }
-    };
-
-
-    // ==========================================
-    // LOAD EMPLOYEES WHEN PAGE OPENS
-    // ==========================================
-
-    useEffect(() => {
-
-        getEmployees();
-
-    }, []);
-
-
-    // ==========================================
-    // LOAD LEAVES WHEN EMPLOYEE CHANGES
-    // ==========================================
-
-    useEffect(() => {
-
-        if (employeeId) {
-
-            getEmployeeLeaves();
-
-        } else {
-
-            setLeaves([]);
-
-        }
-
-    }, [employeeId]);
-
-
-    return (
-
-        <div style={styles.container}>
-
-            {/* =====================================
-                LEAVE APPLICATION
-            ===================================== */}
-
-            <div style={styles.card}>
-
-                <div style={styles.titleSection}>
-
-                    <h2 style={styles.title}>
-                        Leave Application
-                    </h2>
-
-                    <p style={styles.subtitle}>
-                        Apply for employee leave
-                    </p>
-
-                </div>
-
-
-                {message && (
-
-                    <div style={styles.message}>
-                        {message}
-                    </div>
-
-                )}
-
-
-                <form onSubmit={applyLeave}>
-
-                    {/* =================================
-                        EMPLOYEE DROPDOWN
-                    ================================= */}
-
-                    <div style={styles.formGroup}>
-
-                        <label style={styles.label}>
-                            Employee
-                        </label>
-
-                        <select
-                            value={employeeId}
-                            onChange={(e) =>
-                                setEmployeeId(e.target.value)
-                            }
-                            style={styles.input}
-                            required
-                        >
-
-                            <option value="">
-                                {employeeLoading
-                                    ? "Loading employees..."
-                                    : "Select Employee"}
-                            </option>
-
-                            {employees.map((employee) => (
-
-                                <option
-                                    key={employee.id}
-                                    value={employee.id}
-                                >
-
-                                    {employee.employeeCode
-                                        ? `${employee.employeeCode} - ${employee.name}`
-                                        : `${employee.id} - ${employee.name}`}
-
-                                </option>
-
-                            ))}
-
-                        </select>
-
-                    </div>
-
-
-                    {/* =================================
-                        SELECTED EMPLOYEE DETAILS
-                    ================================= */}
-
-                    {employeeId && (
-
-                        <div style={styles.employeeInfo}>
-
-                            {(() => {
-
-                                const employee =
-                                    employees.find(
-                                        emp =>
-                                            String(emp.id) ===
-                                            String(employeeId)
-                                    );
-
-                                if (!employee) {
-                                    return null;
-                                }
-
-                                return (
-
-                                    <>
-
-                                        <div>
-
-                                            <span style={styles.infoLabel}>
-                                                Employee
-                                            </span>
-
-                                            <strong>
-                                                {employee.name}
-                                            </strong>
-
-                                        </div>
-
-
-                                        <div>
-
-                                            <span style={styles.infoLabel}>
-                                                Department
-                                            </span>
-
-                                            <strong>
-                                                {employee.department || "-"}
-                                            </strong>
-
-                                        </div>
-
-
-                                        <div>
-
-                                            <span style={styles.infoLabel}>
-                                                Designation
-                                            </span>
-
-                                            <strong>
-                                                {employee.designation || "-"}
-                                            </strong>
-
-                                        </div>
-
-
-                                        <div>
-
-                                            <span style={styles.infoLabel}>
-                                                Email
-                                            </span>
-
-                                            <strong>
-                                                {employee.email || "-"}
-                                            </strong>
-
-                                        </div>
-
-                                    </>
-
-                                );
-
-                            })()}
-
-                        </div>
-
-                    )}
-
-
-                    {/* =================================
-                        LEAVE TYPE + DAYS
-                    ================================= */}
-
-                    <div style={styles.row}>
-
-                        <div style={styles.halfGroup}>
-
-                            <label style={styles.label}>
-                                Leave Type
-                            </label>
-
-                            <select
-                                value={leaveType}
-                                onChange={(e) =>
-                                    setLeaveType(e.target.value)
-                                }
-                                style={styles.input}
-                            >
-
-                                <option value="CL">
-                                    Casual Leave (CL)
-                                </option>
-
-                                <option value="SL">
-                                    Sick Leave (SL)
-                                </option>
-
-                                <option value="EL">
-                                    Earned Leave (EL)
-                                </option>
-
-                            </select>
-
-                        </div>
-
-
-                        <div style={styles.halfGroup}>
-
-                            <label style={styles.label}>
-                                Number of Days
-                            </label>
-
-                            <input
-                                type="text"
-                                value={calculateDays()}
-                                readOnly
-                                style={{
-                                    ...styles.input,
-                                    ...styles.readOnlyInput
-                                }}
-                            />
-
-                        </div>
-
-                    </div>
-
-
-                    {/* =================================
-                        DATES
-                    ================================= */}
-
-                    <div style={styles.row}>
-
-                        <div style={styles.halfGroup}>
-
-                            <label style={styles.label}>
-                                Start Date
-                            </label>
-
-                            <input
-                                type="date"
-                                value={startDate}
-                                onChange={(e) =>
-                                    setStartDate(e.target.value)
-                                }
-                                style={styles.input}
-                                required
-                            />
-
-                        </div>
-
-
-                        <div style={styles.halfGroup}>
-
-                            <label style={styles.label}>
-                                End Date
-                            </label>
-
-                            <input
-                                type="date"
-                                value={endDate}
-                                min={startDate}
-                                onChange={(e) =>
-                                    setEndDate(e.target.value)
-                                }
-                                style={styles.input}
-                                required
-                            />
-
-                        </div>
-
-                    </div>
-
-
-                    {/* =================================
-                        REASON
-                    ================================= */}
-
-                    <div style={styles.formGroup}>
-
-                        <label style={styles.label}>
-                            Reason
-                        </label>
-
-                        <textarea
-                            value={reason}
-                            onChange={(e) =>
-                                setReason(e.target.value)
-                            }
-                            placeholder="Enter reason for leave"
-                            rows="4"
-                            style={styles.textarea}
-                        />
-
-                    </div>
-
-
-                    {/* =================================
-                        SUBMIT
-                    ================================= */}
-
-                    <button
-                        type="submit"
-                        disabled={loading}
-                        style={{
-                            ...styles.button,
-                            ...(loading
-                                ? styles.buttonDisabled
-                                : {})
-                        }}
-                    >
-
-                        {loading
-                            ? "Applying..."
-                            : "Apply Leave"}
-
-                    </button>
-
-                </form>
-
-            </div>
-
-
-            {/* =====================================
-                LEAVE HISTORY
-            ===================================== */}
-
-            <div style={styles.card}>
-
-                <div style={styles.historyHeader}>
-
-                    <div>
-
-                        <h2 style={styles.title}>
-                            Leave History
-                        </h2>
-
-                        <p style={styles.subtitle}>
-                            Previous leave applications
-                        </p>
-
-                    </div>
-
-
-                    <button
-                        onClick={getEmployeeLeaves}
-                        style={styles.refreshButton}
-                    >
-                        Refresh
-                    </button>
-
-                </div>
-
-
-                {!employeeId ? (
-
-                    <div style={styles.empty}>
-                        Select an employee to view leave history.
-                    </div>
-
-                ) : leaves.length === 0 ? (
-
-                    <div style={styles.empty}>
-                        No leave applications found for this employee.
-                    </div>
-
-                ) : (
-
-                    <div style={styles.tableContainer}>
-
-                        <table style={styles.table}>
-
-                            <thead>
-
-                                <tr>
-
-                                    <th style={styles.th}>
-                                        ID
-                                    </th>
-
-                                    <th style={styles.th}>
-                                        Type
-                                    </th>
-
-                                    <th style={styles.th}>
-                                        Start Date
-                                    </th>
-
-                                    <th style={styles.th}>
-                                        End Date
-                                    </th>
-
-                                    <th style={styles.th}>
-                                        Days
-                                    </th>
-
-                                    <th style={styles.th}>
-                                        Reason
-                                    </th>
-
-                                    <th style={styles.th}>
-                                        Status
-                                    </th>
-
-                                </tr>
-
-                            </thead>
-
-
-                            <tbody>
-
-                                {leaves.map((leave) => (
-
-                                    <tr key={leave.id}>
-
-                                        <td style={styles.td}>
-                                            {leave.id}
-                                        </td>
-
-                                        <td style={styles.td}>
-                                            {leave.leaveType}
-                                        </td>
-
-                                        <td style={styles.td}>
-                                            {leave.startDate}
-                                        </td>
-
-                                        <td style={styles.td}>
-                                            {leave.endDate}
-                                        </td>
-
-                                        <td style={styles.td}>
-                                            {leave.numberOfDays}
-                                        </td>
-
-                                        <td style={styles.td}>
-                                            {leave.reason || "-"}
-                                        </td>
-
-                                        <td style={styles.td}>
-
-                                            <span
-                                                style={{
-                                                    ...styles.status,
-
-                                                    ...(leave.status === "APPROVED"
-                                                        ? styles.approved
-                                                        : leave.status === "REJECTED"
-                                                        ? styles.rejected
-                                                        : styles.pending)
-                                                }}
-                                            >
-                                                {leave.status}
-                                            </span>
-
-                                        </td>
-
-                                    </tr>
-
-                                ))}
-
-                            </tbody>
-
-                        </table>
-
-                    </div>
-
-                )}
-
-            </div>
-
-        </div>
-    );
-}
-
-
-// ==========================================
-// STYLES
-// ==========================================
-
-const styles = {
-
-    container: {
-        width: "100%",
-        maxWidth: "1200px",
-        margin: "30px auto",
-        fontFamily: "Arial, sans-serif",
-        boxSizing: "border-box"
-    },
-
-    card: {
-        background: "#ffffff",
-        padding: "28px",
-        marginBottom: "25px",
-        borderRadius: "12px",
-        boxShadow: "0 2px 12px rgba(0,0,0,0.08)",
-        boxSizing: "border-box"
-    },
-
-    titleSection: {
-        marginBottom: "25px"
-    },
-
-    title: {
-        margin: "0 0 5px",
-        fontSize: "24px",
-        fontWeight: "600",
-        color: "#1f2937"
-    },
-
-    subtitle: {
-        margin: "0",
-        color: "#6b7280",
-        fontSize: "14px"
-    },
-
-    message: {
-        padding: "12px 15px",
-        marginBottom: "20px",
-        background: "#eef2ff",
-        color: "#3730a3",
-        border: "1px solid #c7d2fe",
-        borderRadius: "7px",
-        fontSize: "14px"
-    },
-
-    formGroup: {
-        marginBottom: "20px",
-        display: "flex",
-        flexDirection: "column",
-        gap: "8px",
-        width: "100%"
-    },
-
-    row: {
-        display: "flex",
-        gap: "20px",
-        width: "100%",
-        marginBottom: "20px"
-    },
-
-    halfGroup: {
-        flex: 1,
-        display: "flex",
-        flexDirection: "column",
-        gap: "8px"
-    },
-
-    label: {
-        fontSize: "14px",
-        fontWeight: "600",
-        color: "#374151"
-    },
-
-    input: {
-        width: "100%",
-        height: "44px",
-        padding: "10px 12px",
-        border: "1px solid #d1d5db",
-        borderRadius: "7px",
-        fontSize: "14px",
-        color: "#111827",
-        background: "#ffffff",
-        outline: "none",
-        boxSizing: "border-box"
-    },
-
-    readOnlyInput: {
-        background: "#f3f4f6",
-        color: "#6b7280",
-        cursor: "not-allowed"
-    },
-
-    textarea: {
-        width: "100%",
-        padding: "12px",
-        border: "1px solid #d1d5db",
-        borderRadius: "7px",
-        fontSize: "14px",
-        fontFamily: "Arial, sans-serif",
-        resize: "vertical",
-        boxSizing: "border-box",
-        outline: "none"
-    },
-
-    employeeInfo: {
-        display: "grid",
-        gridTemplateColumns: "repeat(4, 1fr)",
-        gap: "15px",
-        padding: "15px",
-        marginBottom: "20px",
-        background: "#f9fafb",
-        border: "1px solid #e5e7eb",
-        borderRadius: "8px",
-        fontSize: "13px"
-    },
-
-    infoLabel: {
-        display: "block",
-        marginBottom: "5px",
-        color: "#6b7280",
-        fontSize: "12px"
-    },
-
-    button: {
-        width: "100%",
-        height: "45px",
-        border: "none",
-        borderRadius: "7px",
-        cursor: "pointer",
-        background: "#2563eb",
-        color: "#ffffff",
-        fontSize: "15px",
-        fontWeight: "600"
-    },
-
-    buttonDisabled: {
-        background: "#9ca3af",
-        cursor: "not-allowed"
-    },
-
-    refreshButton: {
-        padding: "9px 16px",
-        border: "none",
-        borderRadius: "6px",
-        cursor: "pointer",
-        background: "#374151",
-        color: "#ffffff",
-        fontSize: "14px"
-    },
-
-    historyHeader: {
-        display: "flex",
-        justifyContent: "space-between",
-        alignItems: "center",
-        marginBottom: "20px"
-    },
-
-    tableContainer: {
-        width: "100%",
-        overflowX: "auto"
-    },
-
-    table: {
-        width: "100%",
-        borderCollapse: "collapse",
-        fontSize: "14px"
-    },
-
-    th: {
-        textAlign: "left",
-        padding: "12px",
-        background: "#f3f4f6",
-        color: "#374151",
-        fontWeight: "600",
-        borderBottom: "1px solid #e5e7eb"
-    },
-
-    td: {
-        padding: "12px",
-        borderBottom: "1px solid #e5e7eb",
-        color: "#4b5563"
-    },
-
-    status: {
-        display: "inline-block",
-        padding: "5px 10px",
-        borderRadius: "20px",
-        fontSize: "12px",
-        fontWeight: "600"
-    },
-
-    approved: {
-        background: "#dcfce7",
-        color: "#166534"
-    },
-
-    rejected: {
-        background: "#fee2e2",
-        color: "#991b1b"
-    },
-
-    pending: {
-        background: "#fef3c7",
-        color: "#92400e"
-    },
-
-    empty: {
-        padding: "30px",
-        textAlign: "center",
-        color: "#6b7280",
-        background: "#f9fafb",
-        borderRadius: "8px"
-    },
-
-    table: {
-        width: "100%",
-        borderCollapse: "collapse",
-        fontSize: "14px"
+  const [employees, setEmployees] = useState([]);
+
+  const [employeeId, setEmployeeId] = useState("");
+  const [leaveType, setLeaveType] = useState("CL");
+  const [startDate, setStartDate] = useState("");
+  const [endDate, setEndDate] = useState("");
+  const [reason, setReason] = useState("");
+
+  const [leaves, setLeaves] = useState([]);
+  const [leaveBalance, setLeaveBalance] = useState(null);
+
+  const [loading, setLoading] = useState(false);
+  const [employeeLoading, setEmployeeLoading] = useState(false);
+  const [balanceLoading, setBalanceLoading] = useState(false);
+  const [historyLoading, setHistoryLoading] = useState(false);
+
+  const [message, setMessage] = useState("");
+  const [messageType, setMessageType] = useState("info");
+
+  const showMessage = (text, type = "info") => {
+    setMessage(text);
+    setMessageType(type);
+  };
+
+  const getEmployees = async () => {
+    try {
+      setEmployeeLoading(true);
+      const response = await api.get(EMPLOYEE_API_URL);
+      setEmployees(response.data || []);
+    } catch (error) {
+      console.error("Employee loading error:", error);
+      showMessage(error.response?.data?.message || "Unable to fetch employee list", "error");
+    } finally {
+      setEmployeeLoading(false);
     }
-};
+  };
+
+  const getLeaveBalance = async () => {
+    if (!employeeId) {
+      setLeaveBalance(null);
+      return;
+    }
+
+    try {
+      setBalanceLoading(true);
+      const response = await api.get(`${API_URL}/employee/${employeeId}/balance`);
+      setLeaveBalance(response.data);
+    } catch (error) {
+      console.error("Leave balance error:", error);
+      setLeaveBalance(null);
+      showMessage(
+        error.response?.data?.message || error.response?.data || "Unable to fetch leave balance",
+        "error"
+      );
+    } finally {
+      setBalanceLoading(false);
+    }
+  };
+
+  const getEmployeeLeaves = async () => {
+    if (!employeeId) {
+      setLeaves([]);
+      return;
+    }
+
+    try {
+      setHistoryLoading(true);
+      const response = await api.get(`${API_URL}/employee/${employeeId}`);
+      setLeaves(response.data || []);
+    } catch (error) {
+      console.error("Leave history error:", error);
+      setLeaves([]);
+      showMessage(
+        error.response?.data?.message ||
+          error.response?.data ||
+          "Unable to fetch leave applications",
+        "error"
+      );
+    } finally {
+      setHistoryLoading(false);
+    }
+  };
+
+  const calculateDays = () => {
+    if (!startDate || !endDate) {
+      return 0;
+    }
+
+    const startParts = startDate.split("-").map(Number);
+    const endParts = endDate.split("-").map(Number);
+
+    if (startParts.length !== 3 || endParts.length !== 3) {
+      return 0;
+    }
+
+    const start = Date.UTC(startParts[0], startParts[1] - 1, startParts[2]);
+    const end = Date.UTC(endParts[0], endParts[1] - 1, endParts[2]);
+
+    const difference = Math.floor((end - start) / (1000 * 60 * 60 * 24)) + 1;
+
+    return difference > 0 ? difference : 0;
+  };
+
+  const getSelectedEmployee = () => {
+    if (!employeeId) {
+      return null;
+    }
+
+    return employees.find((employee) => String(employee.id) === String(employeeId)) || null;
+  };
+
+  const getSelectedLeaveBalance = () => {
+    if (!leaveBalance) {
+      return null;
+    }
+
+    switch (leaveType) {
+      case "CL":
+        return Number(leaveBalance.casualLeaveTotal || 0);
+      case "SL":
+        return Number(leaveBalance.sickLeaveTotal || 0);
+      case "EL":
+        return Number(leaveBalance.earnedLeaveTotal || 0);
+      default:
+        return 0;
+    }
+  };
+
+  const applyLeave = async (e) => {
+    e.preventDefault();
+
+    if (!employeeId) {
+      showMessage("Please select an employee", "error");
+      return;
+    }
+
+    if (!startDate || !endDate) {
+      showMessage("Please select start and end date", "error");
+      return;
+    }
+
+    if (endDate < startDate) {
+      showMessage("End date cannot be before start date", "error");
+      return;
+    }
+
+    const numberOfDays = calculateDays();
+
+    if (numberOfDays <= 0) {
+      showMessage("Invalid number of leave days", "error");
+      return;
+    }
+
+    if (!leaveBalance) {
+      showMessage("Leave balance is not available for this employee", "error");
+      return;
+    }
+
+    const remainingBalance = getSelectedLeaveBalance();
+
+    if (remainingBalance === null) {
+      showMessage("Unable to determine leave balance", "error");
+      return;
+    }
+
+    if (numberOfDays > remainingBalance) {
+      showMessage(`Insufficient leave balance. Available: ${remainingBalance} day(s).`, "error");
+      return;
+    }
+
+    try {
+      setLoading(true);
+      setMessage("");
+
+      const leaveData = {
+        leaveType,
+        startDate,
+        endDate,
+        reason: reason.trim(),
+      };
+
+      await api.post(`${API_URL}/apply/${employeeId}`, leaveData);
+
+      showMessage("Leave applied successfully!", "success");
+
+      setLeaveType("CL");
+      setStartDate("");
+      setEndDate("");
+      setReason("");
+
+      await getEmployeeLeaves();
+      await getLeaveBalance();
+    } catch (error) {
+      console.error("Apply leave error:", error);
+      showMessage(
+        error.response?.data?.message || error.response?.data || "Failed to apply leave",
+        "error"
+      );
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    getEmployees();
+  }, []);
+
+  useEffect(() => {
+    if (employeeId) {
+      getEmployeeLeaves();
+      getLeaveBalance();
+    } else {
+      setLeaves([]);
+      setLeaveBalance(null);
+    }
+  }, [employeeId]);
+
+  const selectedEmployee = getSelectedEmployee();
+  const selectedBalance = getSelectedLeaveBalance();
+  const numberOfDays = calculateDays();
+
+  const balanceCards = leaveBalance
+    ? [
+        {
+          key: "CL",
+          label: "Casual Leave",
+          remaining: leaveBalance.casualLeaveTotal,
+          total: leaveBalance.casualLeaveTotal,
+          used: leaveBalance.casualLeaveUsed,
+        },
+        {
+          key: "SL",
+          label: "Sick Leave",
+          remaining: leaveBalance.sickLeaveTotal,
+          total: leaveBalance.sickLeaveTotal,
+          used: leaveBalance.sickLeaveUsed,
+        },
+        {
+          key: "EL",
+          label: "Earned Leave",
+          remaining: leaveBalance.earnedLeaveTotal,
+          total: leaveBalance.earnedLeaveTotal,
+          used: leaveBalance.earnedLeaveUsed,
+        },
+      ]
+    : [];
+
+  const leaveTypeLabel =
+    leaveType === "CL" ? "Casual Leave" : leaveType === "SL" ? "Sick Leave" : "Earned Leave";
+
+  return (
+    <div className="leave-page">
+      {/* ===================== APPLICATION FORM ===================== */}
+      <div className="card">
+        <div className="title-section">
+          <h2>Leave Application</h2>
+          <p>Apply for employee leave</p>
+        </div>
+
+        {message && <div className={`banner banner-${messageType}`}>{message}</div>}
+
+        <form onSubmit={applyLeave}>
+          <div className="field">
+            <label>Employee</label>
+            <select
+              value={employeeId}
+              onChange={(e) => {
+                setEmployeeId(e.target.value);
+                setMessage("");
+              }}
+              required
+            >
+              <option value="">{employeeLoading ? "Loading employees..." : "Select employee"}</option>
+              {employees.map((employee) => (
+                <option key={employee.id} value={employee.id}>
+                  {employee.employeeCode
+                    ? `${employee.employeeCode} - ${employee.name}`
+                    : `${employee.id} - ${employee.name}`}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          {selectedEmployee && (
+            <div className="employee-info">
+              <div>
+                <span className="info-label">Employee</span>
+                <strong>{selectedEmployee.name}</strong>
+              </div>
+              <div>
+                <span className="info-label">Department</span>
+                <strong>{selectedEmployee.department || "-"}</strong>
+              </div>
+              <div>
+                <span className="info-label">Designation</span>
+                <strong>{selectedEmployee.designation || "-"}</strong>
+              </div>
+              <div>
+                <span className="info-label">Email</span>
+                <strong>{selectedEmployee.email || "-"}</strong>
+              </div>
+            </div>
+          )}
+
+          {employeeId && (
+            <div className="balance-section">
+              <div className="balance-header">
+                <div>
+                  <h3>Leave Balance</h3>
+                  <p>Available leave for selected employee</p>
+                </div>
+
+                <button type="button" onClick={getLeaveBalance} className="ghost-button">
+                  Refresh
+                </button>
+              </div>
+
+              {balanceLoading ? (
+                <div className="muted-text">Loading leave balance...</div>
+              ) : leaveBalance ? (
+                <div className="balance-grid">
+                  {balanceCards.map((card) => (
+                    <div key={card.key} className="balance-card">
+                      <span className="balance-type">{card.label}</span>
+                      <strong className="balance-remaining">{card.remaining}</strong>
+                      <span className="balance-label">days remaining</span>
+                      <div className="balance-details">
+                        Total: {card.total}
+                        <br />
+                        Used: {card.used}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <div className="muted-text">Leave balance not available.</div>
+              )}
+            </div>
+          )}
+
+          <div className="row">
+            <div className="field">
+              <label>Leave Type</label>
+              <select value={leaveType} onChange={(e) => setLeaveType(e.target.value)}>
+                {LEAVE_TYPES.map((type) => (
+                  <option key={type.value} value={type.value}>
+                    {type.label}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            <div className="field">
+              <label>Number of Days</label>
+              <input type="text" value={numberOfDays} readOnly className="readonly-input" />
+            </div>
+          </div>
+
+          {employeeId && leaveBalance && (
+            <div className="selected-balance">
+              <span>Available {leaveTypeLabel}:</span>
+              <strong>{selectedBalance} day(s)</strong>
+            </div>
+          )}
+
+          <div className="row">
+            <div className="field">
+              <label>Start Date</label>
+              <input
+                type="date"
+                value={startDate}
+                onChange={(e) => {
+                  setStartDate(e.target.value);
+                  if (endDate && e.target.value > endDate) {
+                    setEndDate("");
+                  }
+                }}
+                required
+              />
+            </div>
+
+            <div className="field">
+              <label>End Date</label>
+              <input
+                type="date"
+                value={endDate}
+                min={startDate || undefined}
+                onChange={(e) => setEndDate(e.target.value)}
+                required
+              />
+            </div>
+          </div>
+
+          <div className="field">
+            <label>Reason</label>
+            <textarea
+              value={reason}
+              onChange={(e) => setReason(e.target.value)}
+              placeholder="Enter reason for leave"
+              rows="4"
+            />
+          </div>
+
+          <button
+            type="submit"
+            className="submit-button"
+            disabled={loading || !employeeId || !leaveBalance}
+          >
+            {loading ? "Applying..." : "Apply Leave"}
+          </button>
+        </form>
+      </div>
+
+      {/* ===================== LEAVE HISTORY ===================== */}
+      <div className="card">
+        <div className="history-header">
+          <div>
+            <h2>Leave History</h2>
+            <p>Previous leave applications</p>
+          </div>
+
+          <button
+            type="button"
+            onClick={() => {
+              getEmployeeLeaves();
+              getLeaveBalance();
+            }}
+            className="ghost-button"
+          >
+            Refresh
+          </button>
+        </div>
+
+        {!employeeId ? (
+          <div className="empty-state">Select an employee to view leave history.</div>
+        ) : historyLoading ? (
+          <div className="empty-state">Loading leave history...</div>
+        ) : leaves.length === 0 ? (
+          <div className="empty-state">No leave applications found for this employee.</div>
+        ) : (
+          <div className="table-container">
+            <table>
+              <thead>
+                <tr>
+                  <th>ID</th>
+                  <th>Type</th>
+                  <th>Start Date</th>
+                  <th>End Date</th>
+                  <th>Days</th>
+                  <th>Reason</th>
+                  <th>Status</th>
+                </tr>
+              </thead>
+
+              <tbody>
+                {leaves.map((leave) => (
+                  <tr key={leave.id}>
+                    <td>{leave.id}</td>
+                    <td>{leave.leaveType}</td>
+                    <td>{leave.startDate}</td>
+                    <td>{leave.endDate}</td>
+                    <td>{leave.numberOfDays}</td>
+                    <td>{leave.reason || "-"}</td>
+                    <td>
+                      <span className={`status-badge status-${leave.status?.toLowerCase()}`}>
+                        {leave.status}
+                      </span>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
 
 export default LeaveApplication;

@@ -1,13 +1,44 @@
-
 import { useEffect, useState } from "react";
 import api from "./axiosConfig";
+import "./Payroll.css";
+
+const MONTHS = [
+  { value: "1", label: "January" },
+  { value: "2", label: "February" },
+  { value: "3", label: "March" },
+  { value: "4", label: "April" },
+  { value: "5", label: "May" },
+  { value: "6", label: "June" },
+  { value: "7", label: "July" },
+  { value: "8", label: "August" },
+  { value: "9", label: "September" },
+  { value: "10", label: "October" },
+  { value: "11", label: "November" },
+  { value: "12", label: "December" },
+];
+
+function getHttpErrorMessage(err, fallback) {
+  if (err.response?.status === 401) {
+    return "Session expired. Please login again.";
+  }
+  if (err.response?.status === 403) {
+    return "You do not have permission to do that.";
+  }
+  return err.response?.data?.message || err.response?.data || fallback;
+}
+
+function formatAmount(amount) {
+  if (amount === null || amount === undefined) {
+    return "₹ 0.00";
+  }
+
+  return `₹ ${Number(amount).toLocaleString("en-IN", {
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+  })}`;
+}
 
 function Payroll() {
-
-  // =====================================================
-  // STATE
-  // =====================================================
-
   const [employees, setEmployees] = useState([]);
 
   const [employeeId, setEmployeeId] = useState("");
@@ -25,1073 +56,324 @@ function Payroll() {
   const [message, setMessage] = useState("");
   const [error, setError] = useState("");
 
-
-  // =====================================================
-  // LOAD EMPLOYEES
-  // =====================================================
+  const actionsBusy = viewingPayslip || downloading || sendingEmail;
 
   useEffect(() => {
-
     const fetchEmployees = async () => {
-
       try {
-
         setLoadingEmployees(true);
-
-        const response = await api.get(
-          "/api/employees"
-        );
-
+        const response = await api.get("/api/employees");
         setEmployees(response.data);
-
       } catch (err) {
-
-        console.error(
-          "Employee loading error:",
-          err
-        );
-
-        if (err.response?.status === 401) {
-
-          setError(
-            "Session expired. Please login again."
-          );
-
-        } else if (err.response?.status === 403) {
-
-          setError(
-            "You do not have permission to view employees."
-          );
-
-        } else {
-
-          setError(
-            "Unable to load employees"
-          );
-
-        }
-
+        console.error("Employee loading error:", err);
+        setError(getHttpErrorMessage(err, "Unable to load employees"));
       } finally {
-
         setLoadingEmployees(false);
-
       }
-
     };
 
     fetchEmployees();
-
   }, []);
 
-
-  // =====================================================
-  // GENERATE PAYROLL
-  // =====================================================
-
   const handleGeneratePayroll = async (e) => {
-
     e.preventDefault();
-
     setMessage("");
     setError("");
     setPayroll(null);
 
-
-    // -----------------------------------------------------
-    // VALIDATION
-    // -----------------------------------------------------
-
     if (!employeeId) {
-
-      setError(
-        "Please select an employee"
-      );
-
+      setError("Please select an employee");
       return;
-
     }
-
 
     if (!month) {
-
-      setError(
-        "Please select a month"
-      );
-
+      setError("Please select a month");
       return;
-
     }
-
 
     if (!year) {
-
-      setError(
-        "Please select a year"
-      );
-
+      setError("Please select a year");
       return;
-
     }
 
-
-    // -----------------------------------------------------
-    // API CALL
-    // -----------------------------------------------------
-
     try {
-
       setLoading(true);
 
-      const response = await api.post(
-        `/api/payroll/generate/${employeeId}`,
-        null,
-        {
-          params: {
-            month: month,
-            year: year
-          }
-        }
-      );
+      const response = await api.post(`/api/payroll/generate/${employeeId}`, null, {
+        params: { month, year },
+      });
 
-
-      console.log(
-        "Payroll response:",
-        response.data
-      );
-
-
-      setPayroll(
-        response.data
-      );
-
-
-      setMessage(
-        "Payroll generated successfully!"
-      );
-
-
+      setPayroll(response.data);
+      setMessage("Payroll generated successfully!");
     } catch (err) {
-
-      console.error(
-        "Payroll generation error:",
-        err
-      );
-
-
-      if (err.response?.status === 401) {
-
-        setError(
-          "Session expired. Please login again."
-        );
-
-      } else if (err.response?.status === 403) {
-
-        setError(
-          "You do not have permission to generate payroll."
-        );
-
-      } else {
-
-        setError(
-          err.response?.data?.message ||
-          err.response?.data ||
-          "Failed to generate payroll"
-        );
-
-      }
-
+      console.error("Payroll generation error:", err);
+      setError(getHttpErrorMessage(err, "Failed to generate payroll"));
     } finally {
-
       setLoading(false);
-
     }
-
   };
 
-
-  // =====================================================
-  // VIEW PAYSLIP
-  // =====================================================
-
   const viewPayslip = async () => {
-
     if (!payroll?.id) {
-
-      setError(
-        "Generate payroll first"
-      );
-
+      setError("Generate payroll first");
       return;
-
     }
 
-
     try {
-
       setViewingPayslip(true);
-
       setMessage("");
       setError("");
 
+      const response = await api.get(`/api/payroll/${payroll.id}/payslip/view`, {
+        responseType: "blob",
+      });
 
-      const response = await api.get(
-        `/api/payroll/${payroll.id}/payslip/view`,
-        {
-          responseType: "blob"
-        }
-      );
+      const blob = new Blob([response.data], { type: "application/pdf" });
+      const url = window.URL.createObjectURL(blob);
 
-
-      const blob = new Blob(
-        [response.data],
-        {
-          type: "application/pdf"
-        }
-      );
-
-
-      const url =
-        window.URL.createObjectURL(blob);
-
-
-      window.open(
-        url,
-        "_blank"
-      );
-
+      window.open(url, "_blank");
 
       // Give browser time to open the PDF
       setTimeout(() => {
-
         window.URL.revokeObjectURL(url);
-
       }, 10000);
-
-
     } catch (err) {
-
-      console.error(
-        "View payslip error:",
-        err
-      );
-
-
-      if (err.response?.status === 401) {
-
-        setError(
-          "Session expired. Please login again."
-        );
-
-      } else if (err.response?.status === 403) {
-
-        setError(
-          "You do not have permission to view this payslip."
-        );
-
-      } else {
-
-        setError(
-          "Failed to view payslip"
-        );
-
-      }
-
+      console.error("View payslip error:", err);
+      setError(getHttpErrorMessage(err, "Failed to view payslip"));
     } finally {
-
       setViewingPayslip(false);
-
     }
-
   };
 
-
-  // =====================================================
-  // DOWNLOAD PAYSLIP
-  // =====================================================
-
   const downloadPayslip = async () => {
-
     if (!payroll?.id) {
-
-      setError(
-        "Generate payroll first"
-      );
-
+      setError("Generate payroll first");
       return;
-
     }
 
-
     try {
-
       setDownloading(true);
-
       setMessage("");
       setError("");
 
+      const response = await api.get(`/api/payroll/${payroll.id}/payslip/download`, {
+        responseType: "blob",
+      });
 
-      const response = await api.get(
-        `/api/payroll/${payroll.id}/payslip/download`,
-        {
-          responseType: "blob"
-        }
-      );
+      const blob = new Blob([response.data], { type: "application/pdf" });
+      const url = window.URL.createObjectURL(blob);
 
-
-      const blob = new Blob(
-        [response.data],
-        {
-          type: "application/pdf"
-        }
-      );
-
-
-      const url =
-        window.URL.createObjectURL(blob);
-
-
-      const link =
-        document.createElement("a");
-
-
+      const link = document.createElement("a");
       link.href = url;
-
-
-      link.download =
-        `Payslip_${payroll.employee?.employeeCode || payroll.employeeId || payroll.id}_${payroll.month}_${payroll.year}.pdf`;
-
+      link.download = `Payslip_${payroll.employee?.employeeCode || payroll.employeeId || payroll.id}_${payroll.month}_${payroll.year}.pdf`;
 
       document.body.appendChild(link);
-
       link.click();
-
       link.remove();
-
 
       window.URL.revokeObjectURL(url);
 
-
-      setMessage(
-        "Payslip downloaded successfully!"
-      );
-
-
+      setMessage("Payslip downloaded successfully!");
     } catch (err) {
-
-      console.error(
-        "Download payslip error:",
-        err
-      );
-
-
-      if (err.response?.status === 401) {
-
-        setError(
-          "Session expired. Please login again."
-        );
-
-      } else if (err.response?.status === 403) {
-
-        setError(
-          "You do not have permission to download this payslip."
-        );
-
-      } else {
-
-        setError(
-          "Failed to download payslip"
-        );
-
-      }
-
+      console.error("Download payslip error:", err);
+      setError(getHttpErrorMessage(err, "Failed to download payslip"));
     } finally {
-
       setDownloading(false);
-
     }
-
   };
 
-
-  // =====================================================
-  // SEND PAYSLIP EMAIL
-  // =====================================================
-
   const sendPayslipEmail = async () => {
-
     if (!payroll?.id) {
-
-      setError(
-        "Generate payroll first"
-      );
-
+      setError("Generate payroll first");
       return;
-
     }
 
-
     try {
-
       setSendingEmail(true);
-
       setMessage("");
       setError("");
 
+      await api.post(`/api/payslip-emails/send/${payroll.id}`);
 
-      const response = await api.post(
-        `/api/payslip-emails/send/${payroll.id}`
-      );
-
-
-      console.log(
-        "Email response:",
-        response.data
-      );
-
-
-      setMessage(
-        "Payslip email sent successfully!"
-      );
-
-
+      setMessage("Payslip email sent successfully!");
     } catch (err) {
-
-      console.error(
-        "Email error:",
-        err
-      );
-
-
-      if (err.response?.status === 401) {
-
-        setError(
-          "Session expired. Please login again."
-        );
-
-      } else if (err.response?.status === 403) {
-
-        setError(
-          "You do not have permission to send payslip emails."
-        );
-
-      } else {
-
-        setError(
-          err.response?.data?.message ||
-          err.response?.data ||
-          "Failed to send payslip email"
-        );
-
-      }
-
+      console.error("Email error:", err);
+      setError(getHttpErrorMessage(err, "Failed to send payslip email"));
     } finally {
-
       setSendingEmail(false);
-
     }
-
   };
-
-
-  // =====================================================
-  // FORMAT AMOUNT
-  // =====================================================
-
-  const formatAmount = (amount) => {
-
-    if (
-      amount === null ||
-      amount === undefined
-    ) {
-
-      return "₹ 0.00";
-
-    }
-
-
-    return `₹ ${Number(amount).toLocaleString(
-      "en-IN",
-      {
-        minimumFractionDigits: 2,
-        maximumFractionDigits: 2
-      }
-    )}`;
-
-  };
-
-
-  // =====================================================
-  // UI
-  // =====================================================
 
   return (
-
     <div className="payroll-page">
-
-
-      {/* =================================================
-          HEADER
-      ================================================= */}
-
       <div className="page-header">
-
         <div>
-
-          <h2>
-            Payroll
-          </h2>
-
-          <p>
-            Generate and manage employee payroll
-          </p>
-
+          <h2>Payroll</h2>
+          <p>Generate and manage employee payroll</p>
         </div>
-
       </div>
 
+      {message && <div className="success">{message}</div>}
+      {error && <div className="error">{error}</div>}
 
-      {/* =================================================
-          SUCCESS MESSAGE
-      ================================================= */}
+      <div className="card">
+        <h3>Generate Payroll</h3>
 
-      {message && (
+        <form onSubmit={handleGeneratePayroll} className="payroll-form">
+          <div className="field">
+            <label>Employee</label>
+            <select
+              value={employeeId}
+              onChange={(e) => setEmployeeId(e.target.value)}
+              disabled={loadingEmployees}
+              required
+            >
+              <option value="">{loadingEmployees ? "Loading employees..." : "Select employee"}</option>
+              {employees.map((employee) => (
+                <option key={employee.id} value={employee.id}>
+                  {employee.name} - {employee.employeeCode}
+                </option>
+              ))}
+            </select>
+          </div>
 
-        <div className="success">
-          {message}
-        </div>
+          <div className="field">
+            <label>Month</label>
+            <select value={month} onChange={(e) => setMonth(e.target.value)} required>
+              <option value="">Select month</option>
+              {MONTHS.map((m) => (
+                <option key={m.value} value={m.value}>
+                  {m.label}
+                </option>
+              ))}
+            </select>
+          </div>
 
-      )}
+          <div className="field">
+            <label>Year</label>
+            <input
+              type="number"
+              value={year}
+              onChange={(e) => setYear(e.target.value)}
+              placeholder="2026"
+              min="2020"
+              max="2100"
+              required
+            />
+          </div>
 
-
-      {/* =================================================
-          ERROR MESSAGE
-      ================================================= */}
-
-      {error && (
-
-        <div className="error">
-          {error}
-        </div>
-
-      )}
-
-
-      {/* =================================================
-          GENERATE PAYROLL FORM
-      ================================================= */}
-
-      <div className="add-employee">
-
-        <h3>
-          Generate Payroll
-        </h3>
-
-
-        <form
-          onSubmit={handleGeneratePayroll}
-        >
-
-
-          {/* EMPLOYEE */}
-
-          <label>
-            Employee
-          </label>
-
-
-          <select
-            value={employeeId}
-            onChange={(e) =>
-              setEmployeeId(
-                e.target.value
-              )
-            }
-            disabled={loadingEmployees}
-            required
-          >
-
-            <option value="">
-
-              {loadingEmployees
-                ? "Loading employees..."
-                : "Select Employee"}
-
-            </option>
-
-
-            {employees.map((employee) => (
-
-              <option
-                key={employee.id}
-                value={employee.id}
-              >
-
-                {employee.name}
-                {" - "}
-                {employee.employeeCode}
-
-              </option>
-
-            ))}
-
-          </select>
-
-
-          {/* MONTH */}
-
-          <label>
-            Month
-          </label>
-
-
-          <select
-            value={month}
-            onChange={(e) =>
-              setMonth(
-                e.target.value
-              )
-            }
-            required
-          >
-
-            <option value="">
-              Select Month
-            </option>
-
-            <option value="1">
-              January
-            </option>
-
-            <option value="2">
-              February
-            </option>
-
-            <option value="3">
-              March
-            </option>
-
-            <option value="4">
-              April
-            </option>
-
-            <option value="5">
-              May
-            </option>
-
-            <option value="6">
-              June
-            </option>
-
-            <option value="7">
-              July
-            </option>
-
-            <option value="8">
-              August
-            </option>
-
-            <option value="9">
-              September
-            </option>
-
-            <option value="10">
-              October
-            </option>
-
-            <option value="11">
-              November
-            </option>
-
-            <option value="12">
-              December
-            </option>
-
-          </select>
-
-
-          {/* YEAR */}
-
-          <label>
-            Year
-          </label>
-
-
-          <input
-            type="number"
-            value={year}
-            onChange={(e) =>
-              setYear(
-                e.target.value
-              )
-            }
-            placeholder="2026"
-            min="2020"
-            max="2100"
-            required
-          />
-
-
-          {/* GENERATE */}
-
-          <button
-            type="submit"
-            className="add-button"
-            disabled={
-              loading ||
-              loadingEmployees
-            }
-          >
-
-            {loading
-              ? "Generating..."
-              : "Generate Payroll"}
-
+          <button type="submit" className="add-button" disabled={loading || loadingEmployees}>
+            {loading ? "Generating..." : "Generate Payroll"}
           </button>
-
         </form>
-
       </div>
-
-
-      {/* =================================================
-          PAYROLL RESULT
-      ================================================= */}
 
       {payroll && (
-
-        <div className="payroll-result">
-
-          <h3>
-            Payroll Details
-          </h3>
-
-
-          <div className="table-container">
-
-            <table>
-
-              <tbody>
-
-                <tr>
-
-                  <th>
-                    Payroll ID
-                  </th>
-
-                  <td>
-                    {payroll.id}
-                  </td>
-
-                </tr>
-
-
-                <tr>
-
-                  <th>
-                    Employee
-                  </th>
-
-                  <td>
-                    {payroll.employee?.name ||
-                      "Unknown"}
-                  </td>
-
-                </tr>
-
-
-                <tr>
-
-                  <th>
-                    Employee Code
-                  </th>
-
-                  <td>
-                    {payroll.employee?.employeeCode ||
-                      payroll.employeeId ||
-                      "-"}
-                  </td>
-
-                </tr>
-
-
-                <tr>
-
-                  <th>
-                    Month
-                  </th>
-
-                  <td>
-                    {payroll.month}
-                  </td>
-
-                </tr>
-
-
-                <tr>
-
-                  <th>
-                    Year
-                  </th>
-
-                  <td>
-                    {payroll.year}
-                  </td>
-
-                </tr>
-
-
-                <tr>
-
-                  <th>
-                    Basic Salary
-                  </th>
-
-                  <td>
-                    {formatAmount(
-                      payroll.basicSalary
-                    )}
-                  </td>
-
-                </tr>
-
-
-                <tr>
-
-                  <th>
-                    HRA
-                  </th>
-
-                  <td>
-                    {formatAmount(
-                      payroll.hra
-                    )}
-                  </td>
-
-                </tr>
-
-
-                <tr>
-
-                  <th>
-                    Special Allowance
-                  </th>
-
-                  <td>
-                    {formatAmount(
-                      payroll.specialAllowance
-                    )}
-                  </td>
-
-                </tr>
-
-
-                <tr>
-
-                  <th>
-                    Gross Salary
-                  </th>
-
-                  <td>
-                    {formatAmount(
-                      payroll.grossSalary
-                    )}
-                  </td>
-
-                </tr>
-
-
-                <tr>
-
-                  <th>
-                    LOP Deduction
-                  </th>
-
-                  <td>
-                    {formatAmount(
-                      payroll.deductions
-                    )}
-                  </td>
-
-                </tr>
-
-
-                <tr>
-
-                  <th>
-                    PF
-                  </th>
-
-                  <td>
-                    {formatAmount(
-                      payroll.pf
-                    )}
-                  </td>
-
-                </tr>
-
-
-                <tr>
-
-                  <th>
-                    ESI
-                  </th>
-
-                  <td>
-                    {formatAmount(
-                      payroll.esi
-                    )}
-                  </td>
-
-                </tr>
-
-
-                <tr>
-
-                  <th>
-                    Professional Tax
-                  </th>
-
-                  <td>
-                    {formatAmount(
-                      payroll.professionalTax
-                    )}
-                  </td>
-
-                </tr>
-
-
-                <tr>
-
-                  <th>
-                    Total Deductions
-                  </th>
-
-                  <td>
-                    {formatAmount(
-                      payroll.totalDeductions
-                    )}
-                  </td>
-
-                </tr>
-
-
-                <tr>
-
-                  <th>
-                    Net Salary
-                  </th>
-
-                  <td>
-
-                    <strong>
-                      {formatAmount(
-                        payroll.netSalary
-                      )}
-                    </strong>
-
-                  </td>
-
-                </tr>
-
-              </tbody>
-
-            </table>
-
+        <div className="card payroll-result">
+          <h3>Payroll Details</h3>
+
+          <div className="payroll-meta">
+            <div>
+              <span className="meta-label">Employee</span>
+              <strong>{payroll.employee?.name || "Unknown"}</strong>
+            </div>
+            <div>
+              <span className="meta-label">Employee Code</span>
+              <strong>{payroll.employee?.employeeCode || payroll.employeeId || "-"}</strong>
+            </div>
+            <div>
+              <span className="meta-label">Period</span>
+              <strong>
+                {MONTHS.find((m) => m.value === String(payroll.month))?.label || payroll.month}{" "}
+                {payroll.year}
+              </strong>
+            </div>
+            <div>
+              <span className="meta-label">Payroll ID</span>
+              <strong>{payroll.id}</strong>
+            </div>
           </div>
 
+          <div className="payroll-breakdown">
+            <div className="breakdown-column">
+              <h4>Earnings</h4>
+              <div className="breakdown-row">
+                <span>Basic Salary</span>
+                <span>{formatAmount(payroll.basicSalary)}</span>
+              </div>
+              <div className="breakdown-row">
+                <span>HRA</span>
+                <span>{formatAmount(payroll.hra)}</span>
+              </div>
+              <div className="breakdown-row">
+                <span>Special Allowance</span>
+                <span>{formatAmount(payroll.specialAllowance)}</span>
+              </div>
+              <div className="breakdown-row breakdown-total">
+                <span>Gross Salary</span>
+                <span>{formatAmount(payroll.grossSalary)}</span>
+              </div>
+            </div>
 
-          {/* =================================================
-              PAYSLIP ACTIONS
-          ================================================= */}
+            <div className="breakdown-column">
+              <h4>Deductions</h4>
+              <div className="breakdown-row">
+                <span>LOP Deduction</span>
+                <span>{formatAmount(payroll.deductions)}</span>
+              </div>
+              <div className="breakdown-row">
+                <span>PF</span>
+                <span>{formatAmount(payroll.pf)}</span>
+              </div>
+              <div className="breakdown-row">
+                <span>ESI</span>
+                <span>{formatAmount(payroll.esi)}</span>
+              </div>
+              <div className="breakdown-row">
+                <span>Professional Tax</span>
+                <span>{formatAmount(payroll.professionalTax)}</span>
+              </div>
+              <div className="breakdown-row breakdown-total">
+                <span>Total Deductions</span>
+                <span>{formatAmount(payroll.totalDeductions)}</span>
+              </div>
+            </div>
+          </div>
 
-          <div
-            style={{
-              display: "flex",
-              gap: "12px",
-              marginTop: "20px",
-              flexWrap: "wrap"
-            }}
-          >
+          <div className="net-salary-banner">
+            <span>Net Salary</span>
+            <strong>{formatAmount(payroll.netSalary)}</strong>
+          </div>
 
-
-            {/* VIEW */}
-
+          <div className="payslip-actions">
             <button
-              className="add-button"
+              className="action-button action-view"
               onClick={viewPayslip}
-              disabled={
-                viewingPayslip ||
-                downloading ||
-                sendingEmail
-              }
+              disabled={actionsBusy}
             >
-
-              {viewingPayslip
-                ? "Opening..."
-                : "👁️ View Payslip"}
-
+              {viewingPayslip ? "Opening..." : "View Payslip"}
             </button>
 
-
-            {/* DOWNLOAD */}
-
             <button
-              className="add-button"
+              className="action-button action-download"
               onClick={downloadPayslip}
-              disabled={
-                downloading ||
-                viewingPayslip ||
-                sendingEmail
-              }
-              style={{
-                backgroundColor:
-                  downloading
-                    ? "#9ca3af"
-                    : "#2563eb"
-              }}
+              disabled={actionsBusy}
             >
-
-              {downloading
-                ? "Downloading..."
-                : "📥 Download Payslip"}
-
+              {downloading ? "Downloading..." : "Download Payslip"}
             </button>
-
-
-            {/* EMAIL */}
 
             <button
-              className="add-button"
+              className="action-button action-email"
               onClick={sendPayslipEmail}
-              disabled={
-                sendingEmail ||
-                downloading ||
-                viewingPayslip
-              }
-              style={{
-                backgroundColor:
-                  sendingEmail
-                    ? "#9ca3af"
-                    : "#16a34a"
-              }}
+              disabled={actionsBusy}
             >
-
-              {sendingEmail
-                ? "Sending..."
-                : "📧 Send Payslip Email"}
-
+              {sendingEmail ? "Sending..." : "Send Payslip Email"}
             </button>
-
           </div>
-
         </div>
-
       )}
-
     </div>
-
   );
-
 }
 
 export default Payroll;
