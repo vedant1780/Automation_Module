@@ -6,6 +6,7 @@ import com.example.hrm.payroll.entity.LeaveBalance;
 import com.example.hrm.payroll.repository.EmployeeRepository;
 import com.example.hrm.payroll.repository.LeaveApplicationRepository;
 import com.example.hrm.payroll.repository.LeaveBalanceRepository;
+import com.example.hrm.payroll.service.LeaveEmailService;
 
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.*;
@@ -15,21 +16,31 @@ import java.util.List;
 
 @RestController
 @RequestMapping("/api/leaves")
+@CrossOrigin(origins = "http://localhost:5173")
 public class LeaveApplicationController {
 
     private final LeaveApplicationRepository leaveRepository;
     private final EmployeeRepository employeeRepository;
     private final LeaveBalanceRepository leaveBalanceRepository;
+    private final LeaveEmailService leaveEmailService;
+
+
+    // =========================================================
+    // CONSTRUCTOR
+    // =========================================================
 
     public LeaveApplicationController(
             LeaveApplicationRepository leaveRepository,
             EmployeeRepository employeeRepository,
-            LeaveBalanceRepository leaveBalanceRepository) {
+            LeaveBalanceRepository leaveBalanceRepository,
+            LeaveEmailService leaveEmailService) {
 
         this.leaveRepository = leaveRepository;
         this.employeeRepository = employeeRepository;
         this.leaveBalanceRepository = leaveBalanceRepository;
+        this.leaveEmailService = leaveEmailService;
     }
+
 
     // =========================================================
     // APPLY FOR LEAVE
@@ -40,11 +51,16 @@ public class LeaveApplicationController {
             @PathVariable Long employeeId,
             @RequestBody LeaveApplication leave) {
 
-        Employee employee = employeeRepository.findById(employeeId)
-                .orElseThrow(() ->
-                        new RuntimeException("Employee not found"));
+        Employee employee =
+                employeeRepository.findById(employeeId)
+                        .orElseThrow(() ->
+                                new RuntimeException(
+                                        "Employee not found"));
 
+        // -----------------------------------------------------
         // Validate dates
+        // -----------------------------------------------------
+
         if (leave.getStartDate() == null ||
                 leave.getEndDate() == null) {
 
@@ -59,7 +75,11 @@ public class LeaveApplicationController {
                     "End date cannot be before start date");
         }
 
+
+        // -----------------------------------------------------
         // Validate leave type
+        // -----------------------------------------------------
+
         if (leave.getLeaveType() == null ||
                 (!leave.getLeaveType().equalsIgnoreCase("CL")
                         && !leave.getLeaveType().equalsIgnoreCase("SL")
@@ -69,18 +89,28 @@ public class LeaveApplicationController {
                     "Invalid leave type. Use CL, SL or EL");
         }
 
+
+        // -----------------------------------------------------
         // Calculate number of days
-        long days = ChronoUnit.DAYS.between(
-                leave.getStartDate(),
-                leave.getEndDate()
-        ) + 1;
+        // -----------------------------------------------------
+
+        long days =
+                ChronoUnit.DAYS.between(
+                        leave.getStartDate(),
+                        leave.getEndDate()
+                ) + 1;
+
 
         leave.setEmployee(employee);
+
         leave.setNumberOfDays((int) days);
+
         leave.setStatus("PENDING");
+
 
         return leaveRepository.save(leave);
     }
+
 
     // =========================================================
     // GET ALL LEAVES
@@ -88,8 +118,10 @@ public class LeaveApplicationController {
 
     @GetMapping
     public List<LeaveApplication> getAllLeaves() {
+
         return leaveRepository.findAll();
     }
+
 
     // =========================================================
     // GET EMPLOYEE LEAVES
@@ -101,10 +133,13 @@ public class LeaveApplicationController {
 
         employeeRepository.findById(employeeId)
                 .orElseThrow(() ->
-                        new RuntimeException("Employee not found"));
+                        new RuntimeException(
+                                "Employee not found"));
 
-        return leaveRepository.findByEmployeeId(employeeId);
+        return leaveRepository
+                .findByEmployeeId(employeeId);
     }
+
 
     // =========================================================
     // APPROVE LEAVE
@@ -115,33 +150,63 @@ public class LeaveApplicationController {
     public LeaveApplication approveLeave(
             @PathVariable Long leaveId) {
 
+        // -----------------------------------------------------
+        // Find leave
+        // -----------------------------------------------------
+
         LeaveApplication leave =
                 leaveRepository.findById(leaveId)
                         .orElseThrow(() ->
                                 new RuntimeException(
                                         "Leave application not found"));
 
-        // Only PENDING leave can be approved
+
+        // -----------------------------------------------------
+        // Check status
+        // -----------------------------------------------------
+
         if (!"PENDING".equalsIgnoreCase(
                 leave.getStatus())) {
 
             throw new RuntimeException(
-                    "Only PENDING leave can be approved. Current status: "
-                            + leave.getStatus());
+                    "Only PENDING leave can be approved. " +
+                            "Current status: " +
+                            leave.getStatus());
         }
 
+
+        // -----------------------------------------------------
         // Validate leave type
+        // -----------------------------------------------------
+
+        if (leave.getLeaveType() == null) {
+
+            throw new RuntimeException(
+                    "Leave type is required");
+        }
+
         String leaveType =
                 leave.getLeaveType().toUpperCase();
 
-        int days = leave.getNumberOfDays();
+
+        // -----------------------------------------------------
+        // Get number of days
+        // -----------------------------------------------------
+
+        int days =
+                leave.getNumberOfDays();
 
         if (days <= 0) {
+
             throw new RuntimeException(
                     "Invalid number of leave days");
         }
 
-        // Find leave balance
+
+        // -----------------------------------------------------
+        // Find employee leave balance
+        // -----------------------------------------------------
+
         LeaveBalance balance =
                 leaveBalanceRepository
                         .findByEmployeeIdAndYear(
@@ -151,6 +216,7 @@ public class LeaveApplicationController {
                         .orElseThrow(() ->
                                 new RuntimeException(
                                         "Leave balance not found for employee"));
+
 
         // =====================================================
         // DEDUCT LEAVE BALANCE
@@ -218,14 +284,36 @@ public class LeaveApplicationController {
                         "Invalid leave type. Use CL, SL or EL");
         }
 
+
+        // -----------------------------------------------------
         // Save updated balance
+        // -----------------------------------------------------
+
         leaveBalanceRepository.save(balance);
 
-        // Change status
+
+        // -----------------------------------------------------
+        // Change leave status
+        // -----------------------------------------------------
+
         leave.setStatus("APPROVED");
 
-        return leaveRepository.save(leave);
+        LeaveApplication savedLeave =
+                leaveRepository.save(leave);
+
+
+        // -----------------------------------------------------
+        // SEND APPROVAL EMAIL
+        // -----------------------------------------------------
+
+        leaveEmailService.sendLeaveApprovedEmail(
+                savedLeave
+        );
+
+
+        return savedLeave;
     }
+
 
     // =========================================================
     // REJECT LEAVE
@@ -236,23 +324,52 @@ public class LeaveApplicationController {
     public LeaveApplication rejectLeave(
             @PathVariable Long leaveId) {
 
+        // -----------------------------------------------------
+        // Find leave
+        // -----------------------------------------------------
+
         LeaveApplication leave =
                 leaveRepository.findById(leaveId)
                         .orElseThrow(() ->
                                 new RuntimeException(
                                         "Leave application not found"));
 
-        // Only PENDING leave can be rejected
+
+        // -----------------------------------------------------
+        // Check status
+        // -----------------------------------------------------
+
         if (!"PENDING".equalsIgnoreCase(
                 leave.getStatus())) {
 
             throw new RuntimeException(
-                    "Only PENDING leave can be rejected. Current status: "
-                            + leave.getStatus());
+                    "Only PENDING leave can be rejected. " +
+                            "Current status: " +
+                            leave.getStatus());
         }
+
+
+        // -----------------------------------------------------
+        // Change status
+        // -----------------------------------------------------
 
         leave.setStatus("REJECTED");
 
-        return leaveRepository.save(leave);
+
+        LeaveApplication savedLeave =
+                leaveRepository.save(leave);
+
+
+        // -----------------------------------------------------
+        // SEND REJECTION EMAIL
+        // -----------------------------------------------------
+
+        leaveEmailService.sendLeaveRejectedEmail(
+                savedLeave
+        );
+
+
+        return savedLeave;
     }
 }
+
