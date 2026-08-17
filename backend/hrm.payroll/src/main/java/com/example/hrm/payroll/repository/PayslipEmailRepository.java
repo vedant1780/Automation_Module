@@ -1,6 +1,7 @@
 package com.example.hrm.payroll.repository;
 
 import com.example.hrm.payroll.entity.PayslipEmail;
+import com.example.hrm.payroll.entity.PayslipEmailStatus;
 import jakarta.transaction.Transactional;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Modifying;
@@ -26,4 +27,5 @@ public interface PayslipEmailRepository
     Optional<PayslipEmail> findByPayrollIdAndStatus(Long payrollId, String status );
     @Transactional
     void deleteByEmployeeId(Long employeeId);
+    Optional<PayslipEmail> findTopByPayrollIdAndStatusOrderBySentAtDesc(Long payrollId, PayslipEmailStatus status);
 }

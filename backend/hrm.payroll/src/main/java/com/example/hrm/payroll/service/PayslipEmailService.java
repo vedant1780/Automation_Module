@@ -1,148 +1,99 @@
 package com.example.hrm.payroll.service;
 
+import com.example.hrm.payroll.entity.Employee;
 import com.example.hrm.payroll.entity.Payroll;
 import com.example.hrm.payroll.entity.PayslipEmail;
+import com.example.hrm.payroll.entity.PayslipEmailStatus;
+import com.example.hrm.payroll.exception.InvalidPayslipRequestException;
+import com.example.hrm.payroll.exception.PayslipSendException;
 import com.example.hrm.payroll.repository.PayslipEmailRepository;
 
-import jakarta.mail.internet.MimeMessage;
-
-import org.springframework.core.io.ByteArrayResource;
-import org.springframework.mail.javamail.JavaMailSender;
-import org.springframework.mail.javamail.MimeMessageHelper;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
-import java.util.Optional;
 
 @Service
 public class PayslipEmailService {
 
-    private final JavaMailSender mailSender;
     private final PayslipEmailRepository payslipEmailRepository;
-    private final PayslipPdfService payslipPdfService;
+    private final PayslipMailSender payslipMailSender;
 
     public PayslipEmailService(
-            JavaMailSender mailSender,
             PayslipEmailRepository payslipEmailRepository,
-            PayslipPdfService payslipPdfService) {
+            PayslipMailSender payslipMailSender) {
 
-        this.mailSender = mailSender;
         this.payslipEmailRepository = payslipEmailRepository;
-        this.payslipPdfService = payslipPdfService;
+        this.payslipMailSender = payslipMailSender;
     }
 
+    @Transactional
     public PayslipEmail sendPayslip(Payroll payroll) {
-        Optional<PayslipEmail> existingEmail = payslipEmailRepository .findByPayrollIdAndStatus( payroll.getId(), "SENT" );
-        if (existingEmail.isPresent())
-        { System.out.println( "Payslip already sent for payroll ID: " + payroll.getId() );
-            return existingEmail.get();
-        }
 
-        String email = payroll.getEmployee().getEmail();
+        validate(payroll);
 
-        // ----------------------------------------
-        // 1. Create log
-        // ----------------------------------------
+        Employee employee = payroll.getEmployee();
 
-        PayslipEmail log = new PayslipEmail();
+        payslipEmailRepository
+                .findTopByPayrollIdAndStatusOrderBySentAtDesc(payroll.getId(), PayslipEmailStatus.SENT)
+                .ifPresent(existing -> {
+                    throw new InvalidPayslipRequestException(
+                            "Payslip already sent for payroll ID: " + payroll.getId()
+                                    + " at " + existing.getSentAt());
+                });
 
-        log.setPayroll(payroll);
-        log.setEmployee(payroll.getEmployee());
-        log.setEmail(email);
-        log.setStatus("PENDING");
+        PayslipEmail payslipEmail = new PayslipEmail();
+        payslipEmail.setPayroll(payroll);
+        payslipEmail.setEmployeeId(employee.getId());
+        payslipEmail.setEmail(employee.getEmail());
+        payslipEmail.setStatus(PayslipEmailStatus.PENDING);
 
-        log = payslipEmailRepository.saveAndFlush(log);
+        payslipEmailRepository.saveAndFlush(payslipEmail);
 
         try {
+            payslipMailSender.send(employee.getEmail(), payroll.getPdfPath(), payroll);
 
-            // ----------------------------------------
-            // 2. Generate PDF
-            // ----------------------------------------
-
-            byte[] pdf =
-                    payslipPdfService.generatePayslip(payroll);
-
-            String fileName =
-                    "Payslip_"
-                            + payroll.getEmployee().getEmployeeCode()
-                            + "_"
-                            + payroll.getMonth()
-                            + "_"
-                            + payroll.getYear()
-                            + ".pdf";
-
-            // ----------------------------------------
-            // 3. Create email
-            // ----------------------------------------
-
-            MimeMessage message =
-                    mailSender.createMimeMessage();
-
-            MimeMessageHelper helper =
-                    new MimeMessageHelper(message, true);
-
-            helper.setTo(email);
-
-            helper.setSubject(
-                    "Salary Payslip - "
-                            + payroll.getMonth()
-                            + "/"
-                            + payroll.getYear()
-            );
-
-            helper.setText(
-                    "Dear "
-                            + payroll.getEmployee().getName()
-                            + ",\n\n"
-                            + "Please find your salary payslip attached."
-                            + "\n\n"
-                            + "Regards,\n"
-                            + "HRM System"
-            );
-
-            helper.addAttachment(
-                    fileName,
-                    new ByteArrayResource(pdf)
-            );
-
-            // ----------------------------------------
-            // 4. Send email
-            // ----------------------------------------
-
-            mailSender.send(message);
-
-            // ----------------------------------------
-            // 5. Update log
-            // ----------------------------------------
-
-            log.setStatus("SENT");
-            log.setSentAt(LocalDateTime.now());
-            log.setErrorMessage(null);
-
-            return payslipEmailRepository.saveAndFlush(log);
+            payslipEmail.setStatus(PayslipEmailStatus.SENT);
+            payslipEmail.setSentAt(LocalDateTime.now());
+            payslipEmail.setErrorMessage(null);
 
         } catch (Exception e) {
+            payslipEmail.setStatus(PayslipEmailStatus.FAILED);
+            payslipEmail.setErrorMessage(truncate(e.getMessage(), 1000));
+            payslipEmailRepository.saveAndFlush(payslipEmail);
 
-            // ----------------------------------------
-            // 6. Email failed
-            // ----------------------------------------
-
-            log.setStatus("FAILED");
-
-            String error = e.getMessage();
-
-            if (error == null) {
-                error = e.getClass().getSimpleName();
-            }
-
-            log.setErrorMessage(error);
-
-            payslipEmailRepository.saveAndFlush(log);
-
-            throw new RuntimeException(
-                    "Failed to send payslip email: " + error,
-                    e
-            );
+            throw new PayslipSendException(
+                    "Failed to send payslip email for payroll ID: " + payroll.getId(), e);
         }
+
+        return payslipEmailRepository.saveAndFlush(payslipEmail);
+    }
+
+    private void validate(Payroll payroll) {
+        if (payroll == null) {
+            throw new InvalidPayslipRequestException("Payroll cannot be null");
+        }
+        if (payroll.getId() == null) {
+            throw new InvalidPayslipRequestException("Payroll ID cannot be null");
+        }
+
+        Employee employee = payroll.getEmployee();
+        if (employee == null) {
+            throw new InvalidPayslipRequestException(
+                    "Employee not found for payroll ID: " + payroll.getId());
+        }
+        if (employee.getEmail() == null || employee.getEmail().isBlank()) {
+            throw new InvalidPayslipRequestException(
+                    "Employee email not found for payroll ID: " + payroll.getId());
+        }
+        if (payroll.getPdfPath() == null || payroll.getPdfPath().isBlank()) {
+            throw new InvalidPayslipRequestException(
+                    "Payslip PDF not generated yet for payroll ID: " + payroll.getId());
+        }
+    }
+
+    private String truncate(String message, int max) {
+        if (message == null) return null;
+        return message.length() > max ? message.substring(0, max) : message;
     }
 }

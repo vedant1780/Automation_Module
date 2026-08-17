@@ -22,53 +22,36 @@ public class ScheduledPayrollService {
             PayrollGenerationService payrollGenerationService,
             PayslipEmailService payslipEmailService) {
 
-        this.employeeRepository =
-                employeeRepository;
-
-        this.payrollGenerationService =
-                payrollGenerationService;
-
-        this.payslipEmailService =
-                payslipEmailService;
+        this.employeeRepository = employeeRepository;
+        this.payrollGenerationService = payrollGenerationService;
+        this.payslipEmailService = payslipEmailService;
     }
 
     // ==========================================================
     // RUN ON 1ST DAY OF EVERY MONTH AT 9:00 AM
     // ==========================================================
 
-    @Scheduled( cron = "0 0 9 1 * *", zone = "Asia/Kolkata" )
+    @Scheduled(
+            cron = "0 0 9 1 * *",
+            zone = "Asia/Kolkata"
+    )
     public void generateAndDeliverPayroll() {
 
-        System.out.println(
-                "================================================"
-        );
+        System.out.println();
+        System.out.println("================================================");
+        System.out.println("SCHEDULED PAYROLL PROCESS STARTED");
+        System.out.println("================================================");
 
-        System.out.println(
-                "SCHEDULED PAYROLL PROCESS STARTED"
-        );
-
-        System.out.println(
-                "================================================"
-        );
-
-        LocalDate today =
-                LocalDate.now();
+        LocalDate today = LocalDate.now();
 
         // Previous month
-        LocalDate previousMonth =
-                today.minusMonths(1);
+        LocalDate previousMonth = today.minusMonths(1);
 
-        int month =
-                previousMonth.getMonthValue();
-
-        int year =
-                previousMonth.getYear();
+        int month = previousMonth.getMonthValue();
+        int year = previousMonth.getYear();
 
         System.out.println(
-                "Payroll Period: "
-                        + month
-                        + "/"
-                        + year
+                "Payroll Period: " + month + "/" + year
         );
 
         try {
@@ -77,9 +60,11 @@ public class ScheduledPayrollService {
                     employeeRepository.findAll();
 
             System.out.println(
-                    "Employees found: "
-                            + employees.size()
+                    "Employees found: " + employees.size()
             );
+
+            int successful = 0;
+            int failed = 0;
 
             for (Employee employee : employees) {
 
@@ -91,19 +76,63 @@ public class ScheduledPayrollService {
                             year
                     );
 
+                    successful++;
+
                 } catch (Exception e) {
 
+                    failed++;
+
+                    String employeeCode =
+                            employee.getEmployeeCode() != null
+                                    ? employee.getEmployeeCode()
+                                    : String.valueOf(employee.getId());
+
                     System.err.println(
-                            "Payroll failed for employee "
-                                    + employee.getEmployeeCode()
-                                    + ": "
+                            "------------------------------------------------"
+                    );
+
+                    System.err.println(
+                            "PAYROLL FAILED"
+                    );
+
+                    System.err.println(
+                            "Employee: "
+                                    + employee.getName()
+                    );
+
+                    System.err.println(
+                            "Employee Code: "
+                                    + employeeCode
+                    );
+
+                    System.err.println(
+                            "Period: "
+                                    + month
+                                    + "/"
+                                    + year
+                    );
+
+                    System.err.println(
+                            "Reason: "
                                     + e.getMessage()
                     );
 
-                    // Continue processing
-                    // remaining employees
+                    System.err.println(
+                            "------------------------------------------------"
+                    );
+
+                    // Continue with next employee
                 }
             }
+
+            System.out.println();
+            System.out.println(
+                    "Successful payrolls: " + successful
+            );
+
+            System.out.println(
+                    "Failed payrolls: " + failed
+            );
 
         } catch (Exception e) {
 
@@ -111,19 +140,15 @@ public class ScheduledPayrollService {
                     "Scheduled payroll process failed: "
                             + e.getMessage()
             );
+
+            e.printStackTrace();
         }
 
-        System.out.println(
-                "================================================"
-        );
-
-        System.out.println(
-                "SCHEDULED PAYROLL PROCESS COMPLETED"
-        );
-
-        System.out.println(
-                "================================================"
-        );
+        System.out.println();
+        System.out.println("================================================");
+        System.out.println("SCHEDULED PAYROLL PROCESS COMPLETED");
+        System.out.println("================================================");
+        System.out.println();
     }
 
     // ==========================================================
@@ -135,6 +160,7 @@ public class ScheduledPayrollService {
             int month,
             int year) {
 
+        System.out.println();
         System.out.println(
                 "Processing employee: "
                         + employee.getName()
@@ -151,13 +177,24 @@ public class ScheduledPayrollService {
                         year
                 );
 
+        if (payroll == null || payroll.getId() == null) {
+
+            throw new RuntimeException(
+                    "Payroll was not generated for employee "
+                            + employee.getId()
+            );
+        }
+
+        System.out.println(
+                "Payroll generated successfully. Payroll ID: "
+                        + payroll.getId()
+        );
+
         // ------------------------------------------------------
         // 2. Generate PDF + Send Email
         // ------------------------------------------------------
 
-        payslipEmailService.sendPayslip(
-                payroll
-        );
+        payslipEmailService.sendPayslip(payroll);
 
         System.out.println(
                 "Payroll delivered successfully: "
@@ -165,4 +202,3 @@ public class ScheduledPayrollService {
         );
     }
 }
-

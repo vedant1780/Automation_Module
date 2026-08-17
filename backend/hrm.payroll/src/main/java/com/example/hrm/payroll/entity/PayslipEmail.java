@@ -1,45 +1,53 @@
 package com.example.hrm.payroll.entity;
 
-import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;
+import lombok.EqualsAndHashCode;
 
 import java.time.LocalDateTime;
 
 @Getter
+@Setter
 @Entity
-@Table(name = "payslip_emails")
+@Table(
+        name = "payslip_email",
+        indexes = {
+                @Index(name = "idx_payslip_email_employee_id", columnList = "employee_id"),
+                @Index(name = "idx_payslip_email_payroll_id", columnList = "payroll_id"),
+                @Index(name = "idx_payslip_email_status", columnList = "status")
+        }
+)
+@EqualsAndHashCode(onlyExplicitlyIncluded = true)
 public class PayslipEmail {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @EqualsAndHashCode.Include
     private Long id;
 
-    @Setter
-    @JsonIgnore
-    @ManyToOne
-    @JoinColumn(name = "payslip_id")
+    @ManyToOne(fetch = FetchType.LAZY, optional = false)
+    @JoinColumn(name = "payroll_id", nullable = false)
     private Payroll payroll;
 
-    @Setter
-    @JsonIgnore
-    @ManyToOne
-    @JoinColumn(name = "employee_id")
-    private Employee employee;
+    // Denormalized for query convenience — must always match payroll.getEmployee().getId().
+    // Set via the service layer from `payroll`, never independently.
+    @Column(name = "employee_id", nullable = false, updatable = false)
+    private Long employeeId;
 
-    @Setter
+    @Column(nullable = false)
     private String email;
 
-    @Setter
-    private String status;
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false, length = 20)
+    private PayslipEmailStatus status;
 
-    @Setter
+    @Column(name = "sent_at")
     private LocalDateTime sentAt;
 
-    @Setter
-    @Column(length = 1000)
+    @Column(name = "error_message", length = 1000)
     private String errorMessage;
 
-
+    @Version
+    private Long version;
 }

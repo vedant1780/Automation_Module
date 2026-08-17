@@ -11,6 +11,7 @@ import org.springframework.web.bind.annotation.*;
 
 @RestController
 @RequestMapping("/api/payroll")
+@CrossOrigin(origins = "http://localhost:5173")
 public class PayslipController {
 
     private final PayrollRepository payrollRepository;
@@ -24,30 +25,47 @@ public class PayslipController {
         this.payslipService = payslipService;
     }
 
-    // VIEW / PRINT payslip
-    @GetMapping("/{payrollId}/payslip")
-    public ResponseEntity<byte[]> generatePayslip(
+    // ==========================================================
+    // VIEW PAYSLIP
+    // ==========================================================
+
+    @GetMapping("/{payrollId}/payslip/view")
+    public ResponseEntity<byte[]> viewPayslip(
             @PathVariable Long payrollId) {
 
         Payroll payroll = payrollRepository
                 .findById(payrollId)
                 .orElseThrow(() ->
-                        new RuntimeException("Payroll not found"));
+                        new RuntimeException(
+                                "Payroll not found with ID: "
+                                        + payrollId));
 
         byte[] pdf =
                 payslipService.generatePayslip(payroll);
 
+        String fileName =
+                "Payslip_"
+                        + payroll.getEmployee().getEmployeeCode()
+                        + "_"
+                        + payroll.getMonth()
+                        + "_"
+                        + payroll.getYear()
+                        + ".pdf";
+
         return ResponseEntity.ok()
                 .header(
                         HttpHeaders.CONTENT_DISPOSITION,
-                        "inline; filename=payslip-" + payrollId + ".pdf"
+                        "inline; filename=\"" + fileName + "\""
                 )
                 .contentType(MediaType.APPLICATION_PDF)
                 .contentLength(pdf.length)
                 .body(pdf);
     }
 
-    // DOWNLOAD payslip
+    // ==========================================================
+    // DOWNLOAD PAYSLIP
+    // ==========================================================
+
     @GetMapping("/{payrollId}/payslip/download")
     public ResponseEntity<byte[]> downloadPayslip(
             @PathVariable Long payrollId) {
@@ -55,7 +73,9 @@ public class PayslipController {
         Payroll payroll = payrollRepository
                 .findById(payrollId)
                 .orElseThrow(() ->
-                        new RuntimeException("Payroll not found"));
+                        new RuntimeException(
+                                "Payroll not found with ID: "
+                                        + payrollId));
 
         byte[] pdf =
                 payslipService.generatePayslip(payroll);
@@ -77,5 +97,27 @@ public class PayslipController {
                 .contentType(MediaType.APPLICATION_PDF)
                 .contentLength(pdf.length)
                 .body(pdf);
+    }
+
+    // ==========================================================
+    // REGENERATE PAYSLIP
+    // ==========================================================
+
+    @PostMapping("/{payrollId}/payslip/regenerate")
+    public ResponseEntity<String> regeneratePayslip(
+            @PathVariable Long payrollId) {
+
+        Payroll payroll = payrollRepository
+                .findById(payrollId)
+                .orElseThrow(() ->
+                        new RuntimeException(
+                                "Payroll not found with ID: "
+                                        + payrollId));
+
+        payslipService.generatePayslip(payroll);
+
+        return ResponseEntity.ok(
+                "Payslip regenerated successfully"
+        );
     }
 }
