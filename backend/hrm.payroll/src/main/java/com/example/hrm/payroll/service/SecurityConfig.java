@@ -1,5 +1,6 @@
 package com.example.hrm.payroll.service;
 
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
@@ -8,24 +9,31 @@ import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 
+import java.util.Arrays;
 import java.util.List;
 
 @Configuration
 public class SecurityConfig {
+
+    @Value("${frontend.url}")
+    private String frontendUrl;
 
     @Bean
     public SecurityFilterChain securityFilterChain(
             HttpSecurity http) throws Exception {
 
         http
-                // Disable CSRF for REST API
                 .csrf(csrf -> csrf.disable())
 
-                // Enable CORS
                 .cors(cors -> cors.configurationSource(corsConfigurationSource()))
 
-                // Authorization
                 .authorizeHttpRequests(auth -> auth
+
+                        // Allow CORS preflight requests
+                        .requestMatchers(
+                                org.springframework.http.HttpMethod.OPTIONS,
+                                "/**"
+                        ).permitAll()
 
                         // Employee APIs
                         .requestMatchers("/api/employees/**").permitAll()
@@ -36,22 +44,25 @@ public class SecurityConfig {
                         // Payroll APIs
                         .requestMatchers("/api/payroll/**").permitAll()
 
-                        // Allow other requests during development
+                        // Auth APIs
+                        .requestMatchers("/api/auth/**").permitAll()
+
                         .anyRequest().permitAll()
                 );
 
         return http.build();
     }
 
-
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {
 
-        CorsConfiguration configuration =
-                new CorsConfiguration();
+        CorsConfiguration configuration = new CorsConfiguration();
 
         configuration.setAllowedOrigins(
-                List.of("http://localhost:5173")
+                Arrays.asList(
+                        frontendUrl,
+                        "http://localhost:5173"
+                )
         );
 
         configuration.setAllowedMethods(
