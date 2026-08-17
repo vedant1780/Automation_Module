@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import axios from "axios";
 import "./AddEmployee.css";
-
+const API_URL = import.meta.env.VITE_API_URL;
 const ROLE_OPTIONS = [
   { value: "ADMIN", label: "Admin" },
   { value: "HR", label: "HR" },
@@ -62,7 +62,7 @@ function AddEmployee({ onEmployeeAdded, editingEmployee, onEditComplete }) {
         }
 
         const response = await axios.put(
-          `http://localhost:8080/api/employees/${editingEmployee.id}`,
+          `${API_URL}/api/employees/${editingEmployee.id}`,
           payload
         );
 
@@ -77,7 +77,7 @@ function AddEmployee({ onEmployeeAdded, editingEmployee, onEditComplete }) {
           onEditComplete();
         }
       } else {
-        const response = await axios.post("http://localhost:8080/api/employees", employee);
+        const response = await axios.post(`${API_URL}/api/employees`, employee);
 
         console.log("Employee created:", response.data);
         setMessage("Employee added successfully!");

@@ -2,9 +2,9 @@
 import React, { useEffect, useState } from "react";
 import api from "./axiosConfig";
 import "./LeaveApplication.css";
-
-const API_URL = "http://localhost:8080/api/leaves";
-const EMPLOYEE_API_URL = "http://localhost:8080/api/employees";
+const ROOT = import.meta.env.VITE_API_URL;
+const API_URL = `${ROOT}/api/leaves`;
+const EMPLOYEE_API_URL = `${ROOT}/api/employees`;
 
 const LEAVE_TYPES = [
   { value: "CL", label: "Casual Leave (CL)" },

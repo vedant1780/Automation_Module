@@ -2,8 +2,9 @@ import React, { useEffect, useState } from "react";
 import api from "./axiosConfig";
 import "./PayslipEmailLogs.css";
 
-const API_URL = "http://localhost:8080/api/payslip-emails";
-const EMPLOYEE_API_URL = "http://localhost:8080/api/employees";
+// Use relative paths relative to baseURL set in axiosConfig
+const API_URL = "/api/payslip-emails";
+const EMPLOYEE_API_URL = "/api/employees";
 
 function formatDate(date) {
   if (!date) {
@@ -72,6 +73,7 @@ function PayslipEmailLogs() {
       setLoading(true);
       setMessage("");
 
+      // Updated endpoint path to use relative URL consistently
       const response = await api.get(`${API_URL}/employee/${employeeId}`);
       setLogs(response.data);
     } catch (error) {

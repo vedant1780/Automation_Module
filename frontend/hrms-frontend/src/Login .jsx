@@ -2,7 +2,10 @@
 import { useState } from "react";
 import axios from "axios";
 import "./Login.css";
+const API_URL = import.meta.env.VITE_API_URL;
 
+
+console.log("MY API URL:", API_URL);
 function Login({ onLoginSuccess }) {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -23,7 +26,7 @@ function Login({ onLoginSuccess }) {
       setLoading(true);
 
       const response = await axios.post(
-        "http://localhost:8080/api/auth/login",
+        `${API_URL}/api/auth/login`,
         {
           email,
           password,
@@ -31,6 +34,7 @@ function Login({ onLoginSuccess }) {
       );
 
       console.log("LOGIN RESPONSE:", response.data);
+      console.log(API_URL)
 
       // Check JWT token
       if (!response.data?.token) {

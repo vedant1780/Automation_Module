@@ -1,8 +1,8 @@
 import React, { useEffect, useState } from "react";
 import api from "./axiosConfig";
 import "./LeaveApproval.css";
-
-const API_URL = "http://localhost:8080/api/leaves";
+const ROOT = import.meta.env.VITE_API_URL;
+const API_URL = `${ROOT}/api/leaves`;
 
 function formatDate(date) {
   if (!date) {

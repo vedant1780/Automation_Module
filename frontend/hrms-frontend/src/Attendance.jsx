@@ -2,6 +2,7 @@
 import { useEffect, useState } from "react";
 import api from "./axiosConfig";
 import "./Attendance.css";
+const API_URL = import.meta.env.VITE_API_URL;
 
 const STATUS_OPTIONS = [
   { value: "PRESENT", label: "Present" },
@@ -147,7 +148,7 @@ function Attendance() {
       setError("");
 
       const response = await api.get(
-        "http://localhost:8080/api/employees"
+        `${API_URL}/api/employees`
       );
 
       setEmployees(response.data || []);
@@ -177,7 +178,7 @@ function Attendance() {
       setError("");
 
       const response = await api.get(
-        `http://localhost:8080/api/attendance/${id}`
+        `${API_URL}/api/attendance/${id}`
       );
 
       setAttendance(response.data || []);
@@ -249,7 +250,7 @@ function Attendance() {
       setLoading(true);
 
       await api.post(
-        `http://localhost:8080/api/attendance/${employeeId}`,
+        `${API_URL}/api/attendance/${employeeId}`,
         {
           attendanceDate,
           status,
